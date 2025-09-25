@@ -47,7 +47,7 @@ driver.quit()
 
 # Write to CSV with UTF-8 encoding
 output_path = os.path.join(os.getcwd(), "weather_log.csv")
-with codecs.open(output_path, "a", encoding="utf-8") as f:
+with open(output_path, "a", encoding="utf-8-sig", newline="") as f:
     writer = csv.writer(f)
     writer.writerow([
         datetime.now().isoformat(),
