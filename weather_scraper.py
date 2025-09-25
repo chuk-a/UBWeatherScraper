@@ -7,6 +7,7 @@ from selenium.webdriver.support import expected_conditions as EC
 import csv
 from datetime import datetime
 import os
+import codecs  # ✅ Needed for UTF-8-safe writing
 
 # Setup headless Chrome for Jenkins
 chrome_options = Options()
@@ -44,6 +45,7 @@ humidity    = get_text(humidity_xpath, "Humidity")
 
 driver.quit()
 
+# Write to CSV with UTF-8 encoding
 output_path = os.path.join(os.getcwd(), "weather_log.csv")
 with codecs.open(output_path, "a", encoding="utf-8") as f:
     writer = csv.writer(f)
