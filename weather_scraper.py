@@ -4,10 +4,10 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-import csv
 from datetime import datetime
+import csv
 import os
-import codecs  # ✅ Needed for UTF-8-safe writing
+import time
 
 # Setup headless Chrome for Jenkins
 chrome_options = Options()
@@ -18,8 +18,6 @@ chrome_options.add_argument("--disable-dev-shm-usage")
 
 service = Service("/usr/local/bin/chromedriver")
 driver = webdriver.Chrome(service=service, options=chrome_options)
-driver.get("https://weather.gov.mn")
-
 wait = WebDriverWait(driver, 10)
 
 def get_text(xpath, label):
@@ -31,17 +29,33 @@ def get_text(xpath, label):
         print(f"{label} error:", e)
         return "N/A"
 
-# XPaths for key weather data
-updated_xpath     = "/html/body/div[1]/div[2]/div/div[2]/div/div[1]/div/div[1]/div/p"
-temperature_xpath = "/html/body/div/div[2]/div/div[2]/div/div[1]/div/div[2]/div[2]"
-wind_speed_xpath  = "/html/body/div[1]/div[2]/div/div[2]/div/div[1]/div/div[3]/div[1]/p[2]"
-humidity_xpath    = "/html/body/div[1]/div[2]/div/div[2]/div/div[1]/div/div[3]/div[3]/p[2]"
+# Weather scraper
+def scrape_weather():
+    driver.get("https://weather.gov.mn")
+    updated_xpath     = "/html/body/div[1]/div[2]/div/div[2]/div/div[1]/div/div[1]/div/p"
+    temperature_xpath = "/html/body/div/div[2]/div/div[2]/div/div[1]/div/div[2]/div[2]"
+    wind_speed_xpath  = "/html/body/div[1]/div[2]/div/div[2]/div/div[1]/div/div[3]/div[1]/p[2]"
+    humidity_xpath    = "/html/body/div[1]/div[2]/div/div[2]/div/div[1]/div/div[3]/div[3]/p[2]"
 
-# Scrape values
-updated     = get_text(updated_xpath, "Updated")
-temperature = get_text(temperature_xpath, "Temperature")
-wind_speed  = get_text(wind_speed_xpath, "Wind Speed (m/s)")
-humidity    = get_text(humidity_xpath, "Humidity")
+    updated     = get_text(updated_xpath, "Updated")
+    temperature = get_text(temperature_xpath, "Temperature")
+    wind_speed  = get_text(wind_speed_xpath, "Wind Speed (m/s)")
+    humidity    = get_text(humidity_xpath, "Humidity")
+    return updated, temperature, wind_speed, humidity
+
+# PM2.5 scraper for IQAir locations
+def scrape_pm25(url, label):
+    driver.get(url)
+    time.sleep(2)
+    xpath = '//*[@id="main-content"]/div[3]/div[2]/div[1]/div[2]/div[2]/div/div[1]/div[3]/p'
+    return get_text(xpath, f"{label} PM2.5 (µg/m³)")
+
+# Scrape all data
+updated, temperature, wind_speed, humidity = scrape_weather()
+pm25_french = scrape_pm25("https://www.iqair.com/mongolia/ulaanbaatar/ulaanbaatar/french-embassy-peace-avenue", "French Embassy")
+pm25_eu     = scrape_pm25("https://www.iqair.com/mongolia/ulaanbaatar/ulaanbaatar/eu-delegation-to-mongolia", "EU Delegation")
+pm25_czech  = scrape_pm25("https://www.iqair.com/mongolia/ulaanbaatar/ulaanbaatar/czech-embassy-ulaanbaatar", "Czech Embassy")
+pm25_yarmag = scrape_pm25("https://www.iqair.com/mongolia/ulaanbaatar/ulaanbaatar/yarmag-garden-city", "Yarmag Garden City")
 
 driver.quit()
 
@@ -56,5 +70,9 @@ with open(output_path, "a", encoding="utf-8-sig", newline="") as f:
         updated,
         temperature,
         wind_speed,
-        humidity
+        humidity,
+        pm25_french,
+        pm25_eu,
+        pm25_czech,
+        pm25_yarmag
     ])
