@@ -44,9 +44,8 @@ humidity    = get_text(humidity_xpath, "Humidity")
 
 driver.quit()
 
-# Log to CSV in Jenkins workspace
 output_path = os.path.join(os.getcwd(), "weather_log.csv")
-with open(output_path, "a", newline="") as f:
+with codecs.open(output_path, "a", encoding="utf-8") as f:
     writer = csv.writer(f)
     writer.writerow([
         datetime.now().isoformat(),
