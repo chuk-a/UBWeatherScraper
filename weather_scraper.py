@@ -10,8 +10,9 @@ import csv
 import os
 import time
 
-# Auto-install matching ChromeDriver
-chromedriver_autoinstaller.install()
+# Auto-install ChromeDriver to user-writable path
+custom_path = os.path.expanduser("~/.cache/chromedriver")
+chromedriver_autoinstaller.install(path=custom_path)
 
 # Setup headless Chrome for Jenkins
 chrome_options = Options()
@@ -29,7 +30,7 @@ def safe_get(url, retries=3, delay=10):
             driver.get(url)
             return True
         except Exception as e:
-            print(f"Attempt {attempt+1} failed for {url}: {e}")
+            print(f"[{datetime.now().isoformat()}] Attempt {attempt+1} failed for {url}: {e}")
             time.sleep(delay)
     return False
 
@@ -42,8 +43,8 @@ def get_text(xpath, label):
         print(f"{label} error:", e)
         return "ERROR"
 
-# Weather scraper
 def scrape_weather():
+    print("Scraping weather.gov.mn...")
     if not safe_get("https://weather.gov.mn"):
         return ["ERROR"] * 4
     updated     = get_text("/html/body/div[1]/div[2]/div/div[2]/div/div[1]/div/div[1]/div/p", "Updated")
@@ -52,8 +53,8 @@ def scrape_weather():
     humidity    = get_text("/html/body/div[1]/div[2]/div/div[2]/div/div[1]/div/div[3]/div[3]/p[2]", "Humidity")
     return updated, temperature, wind_speed, humidity
 
-# PM2.5 scraper for IQAir locations
 def scrape_pm25(url, label):
+    print(f"Scraping {label} PM2.5...")
     if not safe_get(url):
         return "ERROR"
     xpath = '//*[@id="main-content"]/div[3]/div[2]/div[1]/div[2]/div[2]/div/div[1]/div[3]/p'
