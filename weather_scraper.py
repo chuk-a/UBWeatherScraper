@@ -10,8 +10,11 @@ import csv
 import os
 import time
 
-# Auto-install ChromeDriver to user-writable path
-custom_path = os.path.expanduser("~/.cache/chromedriver")
+
+jenkins_home = "/var/lib/jenkins"
+custom_path = os.path.join(jenkins_home, ".cache", "chromedriver")
+os.makedirs(custom_path, exist_ok=True)
+
 chromedriver_autoinstaller.install(path=custom_path)
 
 # Setup headless Chrome for Jenkins
