@@ -8,47 +8,99 @@
     body { font-family: sans-serif; padding: 20px; }
     canvas { max-width: 900px; margin: 40px auto; display: block; }
     h1, p { text-align: center; }
+    #lastUpdated { font-weight: bold; margin-top: 10px; }
+    #pmAlert { font-weight: bold; color: red; margin-bottom: 20px; }
   </style>
 </head>
 <body>
   <h1>UB Weather & Air Quality</h1>
   <p>Live data from weather.gov.mn and embassy PM2.5 monitors</p>
   <p><a href="weather_log.csv" download>Download CSV</a></p>
+  <p id="lastUpdated">Last updated: loading…</p>
+  <p id="pmAlert"></p>
 
   <canvas id="pmChart"></canvas>
   <canvas id="weatherChart"></canvas>
+  <canvas id="windChart"></canvas>
 
   <script>
+    function getColor(value) {
+      if (value <= 12) return 'green';
+      if (value <= 35) return 'yellow';
+      if (value <= 55) return 'orange';
+      return 'red';
+    }
+
     async function loadCSV() {
       const res = await fetch('weather_log.csv');
       const text = await res.text();
-      const rows = text.trim().split('\n').slice(1); // skip header
+      const rows = text.trim().split('\n');
+      const header = rows[0].split(',');
+      const dataRows = rows.slice(1);
 
       const timestamps = [];
       const temps = [];
       const humidities = [];
+      const windSpeeds = [];
       const french = [];
       const czech = [];
       const yarmag = [];
 
-      for (const row of rows) {
+      for (const row of dataRows) {
         const cols = row.split(',');
         timestamps.push(cols[0]);
-        temps.push(parseFloat(cols[2]));       // Temperature
-        humidities.push(parseFloat(cols[4]));  // Humidity
-        french.push(parseFloat(cols[6]));      // French Embassy PM2.5
-        czech.push(parseFloat(cols[7]));       // Czech Embassy PM2.5
-        yarmag.push(parseFloat(cols[8]));      // Yarmag Garden City PM2.5
+        temps.push(parseFloat(cols[2]));
+        windSpeeds.push(parseFloat(cols[3]));
+        humidities.push(parseFloat(cols[4]));
+        french.push(parseFloat(cols[6]));
+        czech.push(parseFloat(cols[7]));
+        yarmag.push(parseFloat(cols[8]));
       }
+
+      const latest = timestamps[timestamps.length - 1];
+      document.getElementById('lastUpdated').textContent = `Last updated: ${latest} (Ulaanbaatar time)`;
+
+      // Threshold alert logic
+      const latestFrench = french[french.length - 1];
+      const latestCzech = czech[czech.length - 1];
+      const latestYarmag = yarmag[yarmag.length - 1];
+
+      let alertMsg = '';
+      if (latestFrench > 55 || latestCzech > 55 || latestYarmag > 55) {
+        alertMsg = '🚨 Unhealthy air quality. Limit outdoor activity.';
+      } else if (latestFrench > 35 || latestCzech > 35 || latestYarmag > 35) {
+        alertMsg = '⚠️ Air quality may affect sensitive groups.';
+      } else {
+        alertMsg = '';
+      }
+      document.getElementById('pmAlert').textContent = alertMsg;
 
       new Chart(document.getElementById('pmChart'), {
         type: 'line',
         data: {
           labels: timestamps,
           datasets: [
-            { label: 'French Embassy PM2.5', data: french, borderColor: 'green', fill: false },
-            { label: 'Czech Embassy PM2.5', data: czech, borderColor: 'orange', fill: false },
-            { label: 'Yarmag Garden City PM2.5', data: yarmag, borderColor: 'purple', fill: false }
+            {
+              label: 'French Embassy PM2.5',
+              data: french,
+              borderColor: french.map(getColor),
+              backgroundColor: french.map(getColor),
+              fill: false
+            },
+            {
+              label: 'Czech Embassy PM2.5',
+              data: czech,
+              borderColor: czech.map(getColor),
+              backgroundColor: czech.map(getColor),
+              fill: false
+            },
+            {
+              label: 'Yarmag Garden City PM2.5',
+              data: yarmag,
+              borderColor: yarmag.map(getColor),
+              backgroundColor: yarmag.map(getColor),
+              fill: false
+            }
           ]
         },
         options: {
@@ -82,6 +134,27 @@
           scales: {
             x: { title: { display: true, text: 'Timestamp' } },
             y: { title: { display: true, text: 'Value' } }
+          }
+        }
+      });
+
+      new Chart(document.getElementById('windChart'), {
+        type: 'line',
+        data: {
+          labels: timestamps,
+          datasets: [
+            { label: 'Wind Speed (m/s)', data: windSpeeds, borderColor: 'teal', fill: false }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            tooltip: { mode: 'index', intersect: false },
+            legend: { position: 'top' }
+          },
+          scales: {
+            x: { title: { display: true, text: 'Timestamp' } },
+            y: { title: { display: true, text: 'Wind Speed (m/s)' } }
           }
         }
       });
