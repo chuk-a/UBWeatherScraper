@@ -54,19 +54,25 @@ def get_text(xpath, label):
 def normalize(val):
     if not val or val == "ERROR":
         return "ERROR"
-    # keep only digits, dot, minus
+    val = val.replace("°", "").replace("м/с", "").replace("%", "").replace("µg/m³", "")
     return "".join([c for c in val if (c.isdigit() or c in ".-")])
+
+def is_valid(val):
+    try:
+        float(val)
+        return True
+    except:
+        return False
 
 def scrape_weather():
     print("Scraping weather.gov.mn...")
     if not safe_get("https://weather.gov.mn"):
         return ["ERROR"] * 4
     updated     = get_text("//div[contains(@class,'forecast')]/p", "Updated")
-    temperature = get_text("//div[contains(@class,'weather-degree')]", "Temperature")
-    wind_speed  = get_text("//p[contains(text(),'м/с')]", "Wind Speed")
-    humidity    = get_text("//p[contains(text(),'%')]", "Humidity")
-    # normalize before returning
-    return updated, normalize(temperature), normalize(wind_speed), normalize(humidity)
+    temperature = normalize(get_text("//div[contains(@class,'weather-degree')]", "Temperature"))
+    wind_speed  = normalize(get_text("//p[contains(text(),'м/с')]", "Wind Speed"))
+    humidity    = normalize(get_text("//p[contains(text(),'%')]", "Humidity"))
+    return updated, temperature, wind_speed, humidity
 
 def scrape_pm25(url, label):
     print(f"Scraping {label} PM2.5...")
@@ -96,17 +102,21 @@ if not os.path.exists(output_path) or os.stat(output_path).st_size == 0:
             "pm25_french", "pm25_eu", "pm25_czech", "pm25_yarmag"
         ])
 
-# Append latest data with UB-local timestamp
-with open(output_path, "a", encoding="utf-8-sig", newline="") as f:
-    writer = csv.writer(f, delimiter="\t")
-    writer.writerow([
-        timestamp,
-        updated,
-        temperature,
-        wind_speed,
-        humidity,
-        pm25_french,
-        pm25_eu,
-        pm25_czech,
-        pm25_yarmag
-    ])
+# Validate all numeric fields before writing
+values = [temperature, wind_speed, humidity, pm25_french, pm25_eu, pm25_czech, pm25_yarmag]
+if all(is_valid(v) for v in values):
+    with open(output_path, "a", encoding="utf-8-sig", newline="") as f:
+        writer = csv.writer(f, delimiter="\t")
+        writer.writerow([
+            timestamp,
+            updated,
+            temperature,
+            wind_speed,
+            humidity,
+            pm25_french,
+            pm25_eu,
+            pm25_czech,
+            pm25_yarmag
+        ])
+else:
+    print("⚠️ Skipping row due to invalid numeric data.")
