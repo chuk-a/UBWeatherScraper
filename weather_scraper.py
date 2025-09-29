@@ -67,6 +67,21 @@ def scrape_pm25(url, label):
     xpath = '//*[@id="main-content"]/div[3]/div[2]/div[1]/div[2]/div[2]/div/div[1]/div[3]/p'
     return get_text(xpath, f"{label} PM2.5 (µg/m³)")
 
+def clean(val):
+    if isinstance(val, str):
+        val = val.strip()
+        if "ERROR" in val:
+            return "ERROR"
+        return (
+            val.replace("°", "")
+               .replace("µg/m³", "")
+               .replace("%", "")
+               .replace("м/с", "")
+               .replace("|", "")
+               .strip()
+        )
+    return val
+
 # Scrape all data
 updated, temperature, wind_speed, humidity = scrape_weather()
 pm25_french  = scrape_pm25("https://www.iqair.com/mongolia/ulaanbaatar/ulaanbaatar/french-embassy-peace-avenue", "French Embassy")
@@ -93,12 +108,12 @@ with open(output_path, "a", encoding="utf-8-sig", newline="") as f:
     writer = csv.writer(f)
     writer.writerow([
         timestamp,
-        updated,
-        temperature,
-        wind_speed,
-        humidity,
-        pm25_french,
-        pm25_eu,
-        pm25_czech,
-        pm25_yarmag
+        clean(updated),
+        clean(temperature),
+        clean(wind_speed),
+        clean(humidity),
+        clean(pm25_french),
+        clean(pm25_eu),
+        clean(pm25_czech),
+        clean(pm25_yarmag)
     ])
