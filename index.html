@@ -24,121 +24,137 @@
   <canvas id="windChart"></canvas>
 
   <script>
-    async function loadCSV() {
-      const res = await fetch("weather_log.csv");
-      const text = await res.text();
-      const rows = text.trim().split("\n");
-      const header = rows[0].split("\t"); // tab-separated
-      const dataRows = rows.slice(1);
+    function getColor(value) {
+      if (value <= 12) return 'green';
+      if (value <= 35) return 'yellow';
+      if (value <= 55) return 'orange';
+      return 'red';
+    }
 
-      // map headers to index
-      const colIndex = {};
-      header.forEach((h, i) => { colIndex[h.trim()] = i; });
+    async function loadCSV() {
+      const res = await fetch('weather_log.csv');
+      const text = await res.text();
+      const rows = text.trim().split('\n');
+      const header = rows[0].split(',');
+      const dataRows = rows.slice(1);
 
       const timestamps = [];
       const temps = [];
       const humidities = [];
       const windSpeeds = [];
       const french = [];
-      const eu = [];
       const czech = [];
       const yarmag = [];
 
       for (const row of dataRows) {
-        const cols = row.split("\t");
-
-        timestamps.push(cols[colIndex["timestamp"]]);
-        temps.push(parseFloat(cols[colIndex["temperature"]]) || null);
-        windSpeeds.push(parseFloat(cols[colIndex["wind_speed"]]) || null);
-        humidities.push(parseFloat(cols[colIndex["humidity"]]) || null);
-        french.push(parseFloat(cols[colIndex["pm25_french"]]) || null);
-        eu.push(parseFloat(cols[colIndex["pm25_eu"]]) || null);
-        czech.push(parseFloat(cols[colIndex["pm25_czech"]]) || null);
-        yarmag.push(parseFloat(cols[colIndex["pm25_yarmag"]]) || null);
+        const cols = row.split(',');
+        timestamps.push(cols[0]);
+        temps.push(parseFloat(cols[2]));
+        windSpeeds.push(parseFloat(cols[3]));
+        humidities.push(parseFloat(cols[4]));
+        french.push(parseFloat(cols[6]));
+        czech.push(parseFloat(cols[7]));
+        yarmag.push(parseFloat(cols[8]));
       }
 
       const latest = timestamps[timestamps.length - 1];
-      document.getElementById("lastUpdated").textContent =
-        `Last updated: ${latest} (Ulaanbaatar time)`;
+      document.getElementById('lastUpdated').textContent = `Last updated: ${latest} (Ulaanbaatar time)`;
 
       // Threshold alert logic
-      const latestVals = [
-        french[french.length - 1],
-        eu[eu.length - 1],
-        czech[czech.length - 1],
-        yarmag[yarmag.length - 1]
-      ].filter(v => v !== null);
+      const latestFrench = french[french.length - 1];
+      const latestCzech = czech[czech.length - 1];
+      const latestYarmag = yarmag[yarmag.length - 1];
 
-      let alertMsg = "";
-      if (latestVals.some(v => v > 55)) {
-        alertMsg = "🚨 Unhealthy air quality. Limit outdoor activity.";
-      } else if (latestVals.some(v => v > 35)) {
-        alertMsg = "⚠️ Air quality may affect sensitive groups.";
+      let alertMsg = '';
+      if (latestFrench > 55 || latestCzech > 55 || latestYarmag > 55) {
+        alertMsg = '🚨 Unhealthy air quality. Limit outdoor activity.';
+      } else if (latestFrench > 35 || latestCzech > 35 || latestYarmag > 35) {
+        alertMsg = '⚠️ Air quality may affect sensitive groups.';
+      } else {
+        alertMsg = '';
       }
-      document.getElementById("pmAlert").textContent = alertMsg;
+      document.getElementById('pmAlert').textContent = alertMsg;
 
-      // Destroy old charts (if reloaded)
-      if (window.pmChart) window.pmChart.destroy();
-      if (window.weatherChart) window.weatherChart.destroy();
-      if (window.windChart) window.windChart.destroy();
-
-      // PM2.5 chart
-      window.pmChart = new Chart(document.getElementById("pmChart"), {
-        type: "line",
+      new Chart(document.getElementById('pmChart'), {
+        type: 'line',
         data: {
           labels: timestamps,
           datasets: [
-            { label: "French Embassy PM2.5", data: french, borderColor: "green", fill: false },
-            { label: "EU Delegation PM2.5", data: eu, borderColor: "blue", fill: false },
-            { label: "Czech Embassy PM2.5", data: czech, borderColor: "orange", fill: false },
-            { label: "Yarmag Garden City PM2.5", data: yarmag, borderColor: "purple", fill: false }
+            {
+              label: 'French Embassy PM2.5',
+              data: french,
+              borderColor: french.map(getColor),
+              backgroundColor: french.map(getColor),
+              fill: false
+            },
+            {
+              label: 'Czech Embassy PM2.5',
+              data: czech,
+              borderColor: czech.map(getColor),
+              backgroundColor: czech.map(getColor),
+              fill: false
+            },
+            {
+              label: 'Yarmag Garden City PM2.5',
+              data: yarmag,
+              borderColor: yarmag.map(getColor),
+              backgroundColor: yarmag.map(getColor),
+              fill: false
+            }
           ]
         },
         options: {
           responsive: true,
-          plugins: { tooltip: { mode: "index", intersect: false }, legend: { position: "top" } },
+          plugins: {
+            tooltip: { mode: 'index', intersect: false },
+            legend: { position: 'top' }
+          },
           scales: {
-            x: { title: { display: true, text: "Timestamp" } },
-            y: { title: { display: true, text: "PM2.5 (µg/m³)" } }
+            x: { title: { display: true, text: 'Timestamp' } },
+            y: { title: { display: true, text: 'PM2.5 (µg/m³)' } }
           }
         }
       });
 
-      // Weather chart
-      window.weatherChart = new Chart(document.getElementById("weatherChart"), {
-        type: "line",
+      new Chart(document.getElementById('weatherChart'), {
+        type: 'line',
         data: {
           labels: timestamps,
           datasets: [
-            { label: "Temperature (°C)", data: temps, borderColor: "red", fill: false },
-            { label: "Humidity (%)", data: humidities, borderColor: "blue", fill: false }
+            { label: 'Temperature (°C)', data: temps, borderColor: 'red', fill: false },
+            { label: 'Humidity (%)', data: humidities, borderColor: 'blue', fill: false }
           ]
         },
         options: {
           responsive: true,
-          plugins: { tooltip: { mode: "index", intersect: false }, legend: { position: "top" } },
+          plugins: {
+            tooltip: { mode: 'index', intersect: false },
+            legend: { position: 'top' }
+          },
           scales: {
-            x: { title: { display: true, text: "Timestamp" } },
-            y: { title: { display: true, text: "Value" } }
+            x: { title: { display: true, text: 'Timestamp' } },
+            y: { title: { display: true, text: 'Value' } }
           }
         }
       });
 
-      // Wind chart
-      window.windChart = new Chart(document.getElementById("windChart"), {
-        type: "line",
+      new Chart(document.getElementById('windChart'), {
+        type: 'line',
         data: {
           labels: timestamps,
           datasets: [
-            { label: "Wind Speed (m/s)", data: windSpeeds, borderColor: "teal", fill: false }
+            { label: 'Wind Speed (m/s)', data: windSpeeds, borderColor: 'teal', fill: false }
           ]
         },
         options: {
           responsive: true,
-          plugins: { tooltip: { mode: "index", intersect: false }, legend: { position: "top" } },
+          plugins: {
+            tooltip: { mode: 'index', intersect: false },
+            legend: { position: 'top' }
+          },
           scales: {
-            x: { title: { display: true, text: "Timestamp" } },
-            y: { title: { display: true, text: "Wind Speed (m/s)" } }
+            x: { title: { display: true, text: 'Timestamp' } },
+            y: { title: { display: true, text: 'Wind Speed (m/s)' } }
           }
         }
       });
@@ -148,4 +164,4 @@
     setInterval(loadCSV, 1800000); // refresh every 30 minutes
   </script>
 </body>
-</html>
+</html> 
