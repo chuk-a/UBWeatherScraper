@@ -6,15 +6,16 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body { font-family: sans-serif; padding: 20px; }
-    canvas { max-width: 800px; margin: 40px auto; display: block; }
+    canvas { max-width: 900px; margin: 40px auto; display: block; }
+    h1, p { text-align: center; }
   </style>
 </head>
 <body>
   <h1>UB Weather & Air Quality</h1>
   <p>Live data from weather.gov.mn and embassy PM2.5 monitors</p>
-  <a href="weather_log.csv" download>Download CSV</a>
+  <p><a href="weather_log.csv" download>Download CSV</a></p>
 
-  <canvas id="weatherChart"></canvas>
+  <canvas id="pmChart"></canvas>
 
   <script>
     async function loadCSV() {
@@ -23,39 +24,45 @@
       const rows = text.trim().split('\n').slice(1); // skip header
 
       const timestamps = [];
-      const temps = [];
-      const humidities = [];
-      const pm25s = [];
+      const french = [];
+      const czech = [];
+      const yarmag = [];
 
       for (const row of rows) {
         const cols = row.split(',');
         timestamps.push(cols[0]);
-        temps.push(parseFloat(cols[2]));       // Temperature
-        humidities.push(parseFloat(cols[4]));  // Humidity
-        pm25s.push(parseFloat(cols[6]));       // French Embassy PM2.5
+        french.push(parseFloat(cols[6]));  // French Embassy PM2.5
+        czech.push(parseFloat(cols[7]));   // Czech Embassy PM2.5
+        yarmag.push(parseFloat(cols[8]));  // Yarmag Garden City PM2.5
       }
 
-      new Chart(document.getElementById('weatherChart'), {
+      new Chart(document.getElementById('pmChart'), {
         type: 'line',
         data: {
           labels: timestamps,
           datasets: [
-            { label: 'Temperature (°C)', data: temps, borderColor: 'red', fill: false },
-            { label: 'Humidity (%)', data: humidities, borderColor: 'blue', fill: false },
-            { label: 'PM2.5 (µg/m³)', data: pm25s, borderColor: 'green', fill: false }
+            { label: 'French Embassy PM2.5', data: french, borderColor: 'green', fill: false },
+            { label: 'Czech Embassy PM2.5', data: czech, borderColor: 'orange', fill: false },
+            { label: 'Yarmag Garden City PM2.5', data: yarmag, borderColor: 'purple', fill: false }
           ]
         },
         options: {
           responsive: true,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            tooltip: { enabled: true },
+            legend: { position: 'top' }
+          },
           scales: {
             x: { title: { display: true, text: 'Timestamp' } },
-            y: { title: { display: true, text: 'Value' } }
+            y: { title: { display: true, text: 'PM2.5 (µg/m³)' } }
           }
         }
       });
     }
 
     loadCSV();
+    setInterval(loadCSV, 1800000); // refresh every 30 minutes
   </script>
 </body>
 </html>
