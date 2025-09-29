@@ -1,12 +1,61 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>UB Weather & PM2.5 Dashboard</title>
   <meta charset="UTF-8">
+  <title>UB Weather & PM2.5 Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    canvas { max-width: 800px; margin: 40px auto; display: block; }
+  </style>
 </head>
 <body>
   <h1>UB Weather & Air Quality</h1>
-  <p>Latest data from weather.gov.mn and embassy PM2.5 monitors.</p>
+  <p>Live data from weather.gov.mn and embassy PM2.5 monitors</p>
   <a href="weather_log.csv" download>Download CSV</a>
+
+  <canvas id="weatherChart"></canvas>
+
+  <script>
+    async function loadCSV() {
+      const res = await fetch('weather_log.csv');
+      const text = await res.text();
+      const rows = text.trim().split('\n').slice(1); // skip header
+
+      const timestamps = [];
+      const temps = [];
+      const humidities = [];
+      const pm25s = [];
+
+      for (const row of rows) {
+        const cols = row.split(',');
+        timestamps.push(cols[0]);
+        temps.push(parseFloat(cols[2]));       // Temperature
+        humidities.push(parseFloat(cols[4]));  // Humidity
+        pm25s.push(parseFloat(cols[6]));       // French Embassy PM2.5
+      }
+
+      new Chart(document.getElementById('weatherChart'), {
+        type: 'line',
+        data: {
+          labels: timestamps,
+          datasets: [
+            { label: 'Temperature (°C)', data: temps, borderColor: 'red', fill: false },
+            { label: 'Humidity (%)', data: humidities, borderColor: 'blue', fill: false },
+            { label: 'PM2.5 (µg/m³)', data: pm25s, borderColor: 'green', fill: false }
+          ]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            x: { title: { display: true, text: 'Timestamp' } },
+            y: { title: { display: true, text: 'Value' } }
+          }
+        }
+      });
+    }
+
+    loadCSV();
+  </script>
 </body>
 </html>
