@@ -16,6 +16,7 @@
   <p><a href="weather_log.csv" download>Download CSV</a></p>
 
   <canvas id="pmChart"></canvas>
+  <canvas id="weatherChart"></canvas>
 
   <script>
     async function loadCSV() {
@@ -24,6 +25,8 @@
       const rows = text.trim().split('\n').slice(1); // skip header
 
       const timestamps = [];
+      const temps = [];
+      const humidities = [];
       const french = [];
       const czech = [];
       const yarmag = [];
@@ -31,9 +34,11 @@
       for (const row of rows) {
         const cols = row.split(',');
         timestamps.push(cols[0]);
-        french.push(parseFloat(cols[6]));  // French Embassy PM2.5
-        czech.push(parseFloat(cols[7]));   // Czech Embassy PM2.5
-        yarmag.push(parseFloat(cols[8]));  // Yarmag Garden City PM2.5
+        temps.push(parseFloat(cols[2]));       // Temperature
+        humidities.push(parseFloat(cols[4]));  // Humidity
+        french.push(parseFloat(cols[6]));      // French Embassy PM2.5
+        czech.push(parseFloat(cols[7]));       // Czech Embassy PM2.5
+        yarmag.push(parseFloat(cols[8]));      // Yarmag Garden City PM2.5
       }
 
       new Chart(document.getElementById('pmChart'), {
@@ -48,14 +53,35 @@
         },
         options: {
           responsive: true,
-          interaction: { mode: 'index', intersect: false },
           plugins: {
-            tooltip: { enabled: true },
+            tooltip: { mode: 'index', intersect: false },
             legend: { position: 'top' }
           },
           scales: {
             x: { title: { display: true, text: 'Timestamp' } },
             y: { title: { display: true, text: 'PM2.5 (µg/m³)' } }
+          }
+        }
+      });
+
+      new Chart(document.getElementById('weatherChart'), {
+        type: 'line',
+        data: {
+          labels: timestamps,
+          datasets: [
+            { label: 'Temperature (°C)', data: temps, borderColor: 'red', fill: false },
+            { label: 'Humidity (%)', data: humidities, borderColor: 'blue', fill: false }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            tooltip: { mode: 'index', intersect: false },
+            legend: { position: 'top' }
+          },
+          scales: {
+            x: { title: { display: true, text: 'Timestamp' } },
+            y: { title: { display: true, text: 'Value' } }
           }
         }
       });
