@@ -10,10 +10,11 @@ import csv
 import os
 import time
 
+import tempfile
 
-jenkins_home = "/var/lib/jenkins"
-custom_path = os.path.join(jenkins_home, ".cache", "chromedriver")
+custom_path = os.path.join(tempfile.gettempdir(), "chromedriver")
 os.makedirs(custom_path, exist_ok=True)
+chromedriver_autoinstaller.install(path=custom_path)
 
 chromedriver_autoinstaller.install(path=custom_path)
 
