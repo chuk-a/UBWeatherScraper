@@ -9,23 +9,19 @@ import chromedriver_autoinstaller
 import csv
 import os
 import time
-
 import tempfile
-
-from datetime import datetime
 import pytz
 
-# Ulaanbaatar timezone
+# Localized timestamp for Ulaanbaatar
 tz = pytz.timezone("Asia/Ulaanbaatar")
 timestamp = datetime.now(tz).strftime("%Y-%m-%d %H:%M")
 
+# Setup ChromeDriver path
 custom_path = os.path.join(tempfile.gettempdir(), "chromedriver")
 os.makedirs(custom_path, exist_ok=True)
 chromedriver_autoinstaller.install(path=custom_path)
 
-chromedriver_autoinstaller.install(path=custom_path)
-
-# Setup headless Chrome for Jenkins
+# Setup headless Chrome for CI/CD
 chrome_options = Options()
 chrome_options.add_argument("--headless")
 chrome_options.add_argument("--disable-gpu")
@@ -92,11 +88,11 @@ if not os.path.exists(output_path) or os.stat(output_path).st_size == 0:
             "pm25_french", "pm25_eu", "pm25_czech", "pm25_yarmag"
         ])
 
-# Append latest data
+# Append latest data with UB-local timestamp
 with open(output_path, "a", encoding="utf-8-sig", newline="") as f:
     writer = csv.writer(f)
     writer.writerow([
-        datetime.now().isoformat(),
+        timestamp,
         updated,
         temperature,
         wind_speed,
