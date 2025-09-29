@@ -10,7 +10,7 @@ on:
     branches: [ "main" ]
 
 permissions:
-  contents: read
+  contents: write  # needed for auto-commit
 
 jobs:
   scrape:
@@ -28,8 +28,8 @@ jobs:
     - name: Install Python dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
         pip install chromedriver-autoinstaller selenium
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
     - name: Install Chrome
       run: |
@@ -46,3 +46,11 @@ jobs:
       with:
         name: weather-log
         path: weather_log.csv
+
+    - name: Auto-commit updated CSV
+      run: |
+        git config --global user.name "github-actions"
+        git config --global user.email "github-actions@github.com"
+        git add weather_log.csv
+        git commit -m "Update weather_log.csv [auto]" || echo "No changes to commit"
+        git push
