@@ -12,6 +12,13 @@ import time
 
 import tempfile
 
+from datetime import datetime
+import pytz
+
+# Ulaanbaatar timezone
+tz = pytz.timezone("Asia/Ulaanbaatar")
+timestamp = datetime.now(tz).strftime("%Y-%m-%d %H:%M")
+
 custom_path = os.path.join(tempfile.gettempdir(), "chromedriver")
 os.makedirs(custom_path, exist_ok=True)
 chromedriver_autoinstaller.install(path=custom_path)
