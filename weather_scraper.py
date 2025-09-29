@@ -29,7 +29,7 @@ chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
 
 driver = webdriver.Chrome(options=chrome_options)
-wait = WebDriverWait(driver, 20)
+wait = WebDriverWait(driver, 15)
 
 def safe_get(url, retries=3, delay=10):
     for attempt in range(retries):
@@ -50,36 +50,22 @@ def get_text(xpath, label):
         print(f"{label} error:", e)
         return "ERROR"
 
-# 🔧 Normalize values (strip units)
-def normalize(val):
-    if not val or val == "ERROR":
-        return "ERROR"
-    val = val.replace("°", "").replace("м/с", "").replace("%", "").replace("µg/m³", "")
-    return "".join([c for c in val if (c.isdigit() or c in ".-")])
-
-def is_valid(val):
-    try:
-        float(val)
-        return True
-    except:
-        return False
-
 def scrape_weather():
     print("Scraping weather.gov.mn...")
     if not safe_get("https://weather.gov.mn"):
         return ["ERROR"] * 4
-    updated     = get_text("//div[contains(@class,'forecast')]/p", "Updated")
-    temperature = normalize(get_text("//div[contains(@class,'weather-degree')]", "Temperature"))
-    wind_speed  = normalize(get_text("//p[contains(text(),'м/с')]", "Wind Speed"))
-    humidity    = normalize(get_text("//p[contains(text(),'%')]", "Humidity"))
+    updated     = get_text("/html/body/div[1]/div[2]/div/div[2]/div/div[1]/div/div[1]/div/p", "Updated")
+    temperature = get_text("/html/body/div/div[2]/div/div[2]/div/div[1]/div/div[2]/div[2]", "Temperature")
+    wind_speed  = get_text("/html/body/div[1]/div[2]/div/div[2]/div/div[1]/div/div[3]/div[1]/p[2]", "Wind Speed (m/s)")
+    humidity    = get_text("/html/body/div[1]/div[2]/div/div[2]/div/div[1]/div/div[3]/div[3]/p[2]", "Humidity")
     return updated, temperature, wind_speed, humidity
 
 def scrape_pm25(url, label):
     print(f"Scraping {label} PM2.5...")
     if not safe_get(url):
         return "ERROR"
-    xpath = '//*[@id="main-content"]//div[contains(@class,"aqi-value")]/p'
-    return normalize(get_text(xpath, f"{label} PM2.5"))
+    xpath = '//*[@id="main-content"]/div[3]/div[2]/div[1]/div[2]/div[2]/div/div[1]/div[3]/p'
+    return get_text(xpath, f"{label} PM2.5 (µg/m³)")
 
 # Scrape all data
 updated, temperature, wind_speed, humidity = scrape_weather()
@@ -96,27 +82,23 @@ output_path = os.path.join(os.getcwd(), "weather_log.csv")
 # Write header if file is empty
 if not os.path.exists(output_path) or os.stat(output_path).st_size == 0:
     with open(output_path, "w", encoding="utf-8-sig", newline="") as f:
-        writer = csv.writer(f, delimiter="\t")
+        writer = csv.writer(f)
         writer.writerow([
             "timestamp", "updated", "temperature", "wind_speed", "humidity",
             "pm25_french", "pm25_eu", "pm25_czech", "pm25_yarmag"
         ])
 
-# Validate all numeric fields before writing
-values = [temperature, wind_speed, humidity, pm25_french, pm25_eu, pm25_czech, pm25_yarmag]
-if all(is_valid(v) for v in values):
-    with open(output_path, "a", encoding="utf-8-sig", newline="") as f:
-        writer = csv.writer(f, delimiter="\t")
-        writer.writerow([
-            timestamp,
-            updated,
-            temperature,
-            wind_speed,
-            humidity,
-            pm25_french,
-            pm25_eu,
-            pm25_czech,
-            pm25_yarmag
-        ])
-else:
-    print("⚠️ Skipping row due to invalid numeric data.")
+# Append latest data with UB-local timestamp
+with open(output_path, "a", encoding="utf-8-sig", newline="") as f:
+    writer = csv.writer(f)
+    writer.writerow([
+        timestamp,
+        updated,
+        temperature,
+        wind_speed,
+        humidity,
+        pm25_french,
+        pm25_eu,
+        pm25_czech,
+        pm25_yarmag
+    ])
