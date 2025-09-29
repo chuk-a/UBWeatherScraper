@@ -1,27 +1,109 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>UB Weather & PM2.5 Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    body { font-family: sans-serif; padding: 20px; }
-    canvas { max-width: 900px; margin: 40px auto; display: block; }
-    h1, p { text-align: center; }
-    #lastUpdated { font-weight: bold; margin-top: 10px; }
-    #pmAlert { font-weight: bold; color: red; margin-bottom: 20px; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #f9f9f9;
+      color: #333;
+      margin: 0;
+      padding: 0;
+    }
+    header, footer {
+      text-align: center;
+      padding: 10px 0;
+      background: #eee;
+    }
+    nav a {
+      margin: 0 10px;
+      text-decoration: none;
+      color: #0077cc;
+    }
+    .container {
+      max-width: 1000px;
+      margin: auto;
+      padding: 20px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 40px;
+    }
+    @media (min-width: 768px) {
+      .grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+    canvas {
+      width: 100%;
+      height: 300px;
+      background: white;
+      border-radius: 8px;
+    }
+    h1, p {
+      text-align: center;
+    }
+    #lastUpdated {
+      font-weight: bold;
+      margin-top: 10px;
+    }
+    #pmAlert {
+      font-weight: bold;
+      color: red;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .dark {
+      background: #121212;
+      color: #eee;
+    }
+    .dark canvas {
+      background: #1e1e1e;
+    }
+    .toggle-btn {
+      display: block;
+      margin: 10px auto;
+      padding: 6px 12px;
+      background: #0077cc;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
-  <h1>UB Weather & Air Quality</h1>
-  <p>Live data from weather.gov.mn and embassy PM2.5 monitors</p>
-  <p><a href="weather_log.csv" download>Download CSV</a></p>
-  <p id="lastUpdated">Last updated: loading…</p>
-  <p id="pmAlert"></p>
+  <header>
+    <nav>
+      <a href="#pmChart">PM2.5</a>
+      <a href="#weatherChart">Weather</a>
+      <a href="#windChart">Wind</a>
+    </nav>
+  </header>
 
-  <canvas id="pmChart"></canvas>
-  <canvas id="weatherChart"></canvas>
-  <canvas id="windChart"></canvas>
+  <div class="container">
+    <h1>UB Weather & Air Quality</h1>
+    <p>Live data from weather.gov.mn and embassy PM2.5 monitors</p>
+    <p><a href="weather_log.csv" download>📥 Download CSV</a></p>
+    <p id="lastUpdated">Last updated: loading…</p>
+    <p id="pmAlert"></p>
+    <button class="toggle-btn" onclick="document.body.classList.toggle('dark')">🌙 Toggle Dark Mode</button>
+
+    <div class="grid">
+      <canvas id="pmChart"></canvas>
+      <canvas id="weatherChart"></canvas>
+      <canvas id="windChart"></canvas>
+    </div>
+  </div>
+
+  <footer>
+    Data from weather.gov.mn & embassies · Updated every 30 min · <a href="https://github.com/YOUR_REPO">GitHub</a>
+  </footer>
 
   <script>
     function getColor(value) {
@@ -31,6 +113,10 @@
       return 'red';
     }
 
+    function safeParse(val) {
+      return val === "ERROR" ? null : parseFloat(val);
+    }
+
     async function loadCSV() {
       const res = await fetch('weather_log.csv');
       const text = await res.text();
@@ -38,40 +124,32 @@
       const header = rows[0].split(',');
       const dataRows = rows.slice(1);
 
-      const timestamps = [];
-      const temps = [];
-      const humidities = [];
-      const windSpeeds = [];
-      const french = [];
-      const czech = [];
-      const yarmag = [];
+      const timestamps = [], temps = [], humidities = [], windSpeeds = [];
+      const french = [], czech = [], yarmag = [];
 
       for (const row of dataRows) {
         const cols = row.split(',');
         timestamps.push(cols[0]);
-        temps.push(parseFloat(cols[2]));
-        windSpeeds.push(parseFloat(cols[3]));
-        humidities.push(parseFloat(cols[4]));
-        french.push(parseFloat(cols[6]));
-        czech.push(parseFloat(cols[7]));
-        yarmag.push(parseFloat(cols[8]));
+        temps.push(safeParse(cols[2]));
+        windSpeeds.push(safeParse(cols[3]));
+        humidities.push(safeParse(cols[4]));
+        french.push(safeParse(cols[6]));
+        czech.push(safeParse(cols[7]));
+        yarmag.push(safeParse(cols[8]));
       }
 
       const latest = timestamps[timestamps.length - 1];
       document.getElementById('lastUpdated').textContent = `Last updated: ${latest} (Ulaanbaatar time)`;
 
-      // Threshold alert logic
       const latestFrench = french[french.length - 1];
       const latestCzech = czech[czech.length - 1];
       const latestYarmag = yarmag[yarmag.length - 1];
 
       let alertMsg = '';
-      if (latestFrench > 55 || latestCzech > 55 || latestYarmag > 55) {
+      if ([latestFrench, latestCzech, latestYarmag].some(v => v > 55)) {
         alertMsg = '🚨 Unhealthy air quality. Limit outdoor activity.';
-      } else if (latestFrench > 35 || latestCzech > 35 || latestYarmag > 35) {
+      } else if ([latestFrench, latestCzech, latestYarmag].some(v => v > 35)) {
         alertMsg = '⚠️ Air quality may affect sensitive groups.';
-      } else {
-        alertMsg = '';
       }
       document.getElementById('pmAlert').textContent = alertMsg;
 
@@ -83,35 +161,42 @@
             {
               label: 'French Embassy PM2.5',
               data: french,
-              borderColor: french.map(getColor),
-              backgroundColor: french.map(getColor),
-              fill: false
+              borderColor: 'rgba(255,99,132,1)',
+              backgroundColor: 'rgba(255,99,132,0.2)',
+              pointRadius: 2,
+              tension: 0.3,
+              fill: true
             },
             {
               label: 'Czech Embassy PM2.5',
               data: czech,
-              borderColor: czech.map(getColor),
-              backgroundColor: czech.map(getColor),
-              fill: false
+              borderColor: 'rgba(54,162,235,1)',
+              backgroundColor: 'rgba(54,162,235,0.2)',
+              pointRadius: 2,
+              tension: 0.3,
+              fill: true
             },
             {
               label: 'Yarmag Garden City PM2.5',
               data: yarmag,
-              borderColor: yarmag.map(getColor),
-              backgroundColor: yarmag.map(getColor),
-              fill: false
+              borderColor: 'rgba(75,192,192,1)',
+              backgroundColor: 'rgba(75,192,192,0.2)',
+              pointRadius: 2,
+              tension: 0.3,
+              fill: true
             }
           ]
         },
         options: {
           responsive: true,
+          interaction: { mode: 'nearest', axis: 'x' },
           plugins: {
             tooltip: { mode: 'index', intersect: false },
             legend: { position: 'top' }
           },
           scales: {
             x: { title: { display: true, text: 'Timestamp' } },
-            y: { title: { display: true, text: 'PM2.5 (µg/m³)' } }
+            y: { title: { display: true, text: 'PM2.5 (µg/m³)' }, beginAtZero: true }
           }
         }
       });
@@ -121,8 +206,8 @@
         data: {
           labels: timestamps,
           datasets: [
-            { label: 'Temperature (°C)', data: temps, borderColor: 'red', fill: false },
-            { label: 'Humidity (%)', data: humidities, borderColor: 'blue', fill: false }
+            { label: 'Temperature (°C)', data: temps, borderColor: 'red', pointRadius: 2, tension: 0.3, fill: true },
+            { label: 'Humidity (%)', data: humidities, borderColor: 'blue', pointRadius: 2, tension: 0.3, fill: true }
           ]
         },
         options: {
@@ -133,7 +218,7 @@
           },
           scales: {
             x: { title: { display: true, text: 'Timestamp' } },
-            y: { title: { display: true, text: 'Value' } }
+            y: { title: { display: true, text: 'Value' }, beginAtZero: true }
           }
         }
       });
@@ -143,7 +228,7 @@
         data: {
           labels: timestamps,
           datasets: [
-            { label: 'Wind Speed (m/s)', data: windSpeeds, borderColor: 'teal', fill: false }
+            { label: 'Wind Speed (m/s)', data: windSpeeds, borderColor: 'teal', pointRadius: 2, tension: 0.3, fill: true }
           ]
         },
         options: {
@@ -154,14 +239,8 @@
           },
           scales: {
             x: { title: { display: true, text: 'Timestamp' } },
-            y: { title: { display: true, text: 'Wind Speed (m/s)' } }
+            y: { title: { display: true, text: 'Wind Speed (m/s)' }, beginAtZero: true }
           }
         }
       });
-    }
-
-    loadCSV();
-    setInterval(loadCSV, 1800000); // refresh every 30 minutes
-  </script>
-</body>
-</html> 
+    [A](https://github.com/webmappsrl/geohub/tree/03b01c179083a528fa6e1a4d8961e562d19a5b89/resources%2Fviews%2Fcomponents%2FtrackLayout.blade.php?copilot_analytics_metadata=eyJldmVudEluZm9fbWVzc2FnZUlkIjoiOG10NUVjdUh0ekFENGtQbkt4Z1U2IiwiZXZlbnRJbmZvX2NsaWNrU291cmNlIjoiY2l0YXRpb25MaW5rIiwiZXZlbnRJbmZvX2NsaWNrRGVzdGluYXRpb24iOiJodHRwczpcL1wvZ2l0aHViLmNvbVwvd2VibWFwcHNybFwvZ2VvaHViXC90cmVlXC8wM2IwMWMxNzkwODNhNTI4ZmE2ZTFhNGQ4OTYxZTU2MmQxOWE1Yjg5XC9yZXNvdXJjZXMlMkZ2aWV3cyUyRmNvbXBvbmVudHMlMkZ0cmFja0xheW91dC5ibGFkZS5waHAiLCJldmVudEluZm9fY29udmVyc2F0aW9uSWQiOiJVb1Y2Vkh6ZHZDbndlVmFLR2FwdVoifQ%3D%3D&citationMarker=9F742443-6C92-4C44-BF58-8F5A7C53B6F1)
