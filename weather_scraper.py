@@ -71,7 +71,7 @@ def scrape_pm25(url, label):
 updated, temperature, wind_speed, humidity = scrape_weather()
 pm25_french  = scrape_pm25("https://www.iqair.com/mongolia/ulaanbaatar/ulaanbaatar/french-embassy-peace-avenue", "French Embassy")
 pm25_eu      = scrape_pm25("https://www.iqair.com/mongolia/ulaanbaatar/ulaanbaatar/european-union-delegation", "EU Delegation")
-pm25_czech   = scrape_pm25("https://www.iqair.com/mongolia/ulaanbaatar/ulaanbaatar/czech-embassy", "Czech Embassy")
+pm25_czech   = scrape_pm25("https://www.iqair.com/mongolia/ulaanbaatar/ulaanbaatar/czech-embassy-ulaanbaatar", "Czech Embassy")
 pm25_yarmag  = scrape_pm25("https://www.iqair.com/mongolia/ulaanbaatar/ulaanbaatar/yarmag-garden-city", "Yarmag Garden City")
 
 driver.quit()
