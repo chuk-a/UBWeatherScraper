@@ -247,13 +247,30 @@
         data: {
           labels: timestamps,
           datasets: [
-            { label: 'Wind Speed (m/s)', data: windSpeeds, borderColor: 'teal', pointRadius: 2, tension: 0.3, fill: true }
+            {
+              label: 'Wind Speed (m/s)',
+              data: windSpeeds,
+              borderColor: 'teal',
+              backgroundColor: 'rgba(0,128,128,0.2)',
+              pointRadius: 2,
+              tension: 0.3,
+              fill: true
+            }
           ]
         },
-        options [A](https://github.com/webmappsrl/geohub/tree/03b01c179083a528fa6e1a4d8961e562d19a5b89/resources%2Fviews%2Fcomponents%2FtrackLayout.blade.php?copilot_analytics_metadata=eyJldmVudEluZm9fY29udmVyc2F0aW9uSWQiOiJpdXZOdURGZnNkVGpDakZRQ3haeTEiLCJldmVudEluZm9fY2xpY2tTb3VyY2UiOiJjaXRhdGlvbkxpbmsiLCJldmVudEluZm9fbWVzc2FnZUlkIjoiU3pQQ3pkQkRDSEZodG95ZkFWWmlBIiwiZXZlbnRJbmZvX2NsaWNrRGVzdGluYXRpb24iOiJodHRwczpcL1wvZ2l0aHViLmNvbVwvd2VibWFwcHNybFwvZ2VvaHViXC90cmVlXC8wM2IwMWMxNzkwODNhNTI4ZmE2ZTFhNGQ4OTYxZTU2MmQxOWE1Yjg5XC9yZXNvdXJjZXMlMkZ2aWV3cyUyRmNvbXBvbmVudHMlMkZ0cmFja0xheW91dC5ibGFkZS5waHAifQ%3D%3D&citationMarker=9F742443-6C92-4C44-BF58-8F5A7C53B6F1)
-                    }
-      });
-    }
+        options: {
+          responsive: true,
+          plugins: {
+            tooltip: { mode: 'index', intersect: false },
+            legend: { position: 'top' }
+          },
+          scales: {
+            x: { title: { display: true, text: 'Timestamp' } },
+            y: { title: { display: true, text: 'Wind Speed (m/s)' }, beginAtZero: true }
+          }
+        }
+      });                  
+}
 
     loadCSV();
     setInterval(loadCSV, 1800000); // refresh every 30 minutes
