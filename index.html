@@ -102,7 +102,7 @@
   </div>
 
   <footer>
-    Data from weather.gov.mn & embassies · Updated every 30 min · <a href="https://github.com/YOUR_REPO">GitHub</a>
+    Data from weather.gov.mn & embassies · Updated every 30 min · <a href="https://github.com/chuk-a/chuk-a.github.io">GitHub</a>
   </footer>
 
   <script>
@@ -118,8 +118,27 @@
     }
 
     async function loadCSV() {
-      const res = await fetch('weather_log.csv');
-      const text = await res.text();
+      const sources = [
+        'weather_log.csv',
+        'https://raw.githubusercontent.com/chuk-a/chuk-a.github.io/main/weather_log.csv'
+      ];
+
+      for (const src of sources) {
+        try {
+          const res = await fetch(src);
+          if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
+          const text = await res.text();
+          parseCSV(text);
+          return;
+        } catch (err) {
+          console.warn(`Failed to load from ${src}:`, err);
+        }
+      }
+
+      document.getElementById('lastUpdated').textContent = '⚠️ Failed to load data';
+    }
+
+    function parseCSV(text) {
       const rows = text.trim().split('\n');
       const header = rows[0].split(',');
       const dataRows = rows.slice(1);
@@ -231,19 +250,9 @@
             { label: 'Wind Speed (m/s)', data: windSpeeds, borderColor: 'teal', pointRadius: 2, tension: 0.3, fill: true }
           ]
         },
-        options: {
-          responsive: true,
-          plugins: {
-            tooltip: { mode: 'index', intersect: false },
-            legend: { position: 'top' }
-          },
-          scales: {
-            x: { title: { display: true, text: 'Timestamp' } },
-            y: { title: { display: true, text: 'Wind Speed (m/s)' }, beginAtZero: true }
-          }
-        }
+        options [A](https://github.com/webmappsrl/geohub/tree/03b01c179083a528fa6e1a4d8961e562d19a5b89/resources%2Fviews%2Fcomponents%2FtrackLayout.blade.php?copilot_analytics_metadata=eyJldmVudEluZm9fY29udmVyc2F0aW9uSWQiOiJpdXZOdURGZnNkVGpDakZRQ3haeTEiLCJldmVudEluZm9fY2xpY2tTb3VyY2UiOiJjaXRhdGlvbkxpbmsiLCJldmVudEluZm9fbWVzc2FnZUlkIjoiU3pQQ3pkQkRDSEZodG95ZkFWWmlBIiwiZXZlbnRJbmZvX2NsaWNrRGVzdGluYXRpb24iOiJodHRwczpcL1wvZ2l0aHViLmNvbVwvd2VibWFwcHNybFwvZ2VvaHViXC90cmVlXC8wM2IwMWMxNzkwODNhNTI4ZmE2ZTFhNGQ4OTYxZTU2MmQxOWE1Yjg5XC9yZXNvdXJjZXMlMkZ2aWV3cyUyRmNvbXBvbmVudHMlMkZ0cmFja0xheW91dC5ibGFkZS5waHAifQ%3D%3D&citationMarker=9F742443-6C92-4C44-BF58-8F5A7C53B6F1)
+                    }
       });
-    [A](https://github.com/webmappsrl/geohub/tree/03b01c179083a528fa6e1a4d8961e562d19a5b89/resources%2Fviews%2Fcomponents%2FtrackLayout.blade.php?copilot_analytics_metadata=eyJldmVudEluZm9fbWVzc2FnZUlkIjoiOG10NUVjdUh0ekFENGtQbkt4Z1U2IiwiZXZlbnRJbmZvX2NsaWNrU291cmNlIjoiY2l0YXRpb25MaW5rIiwiZXZlbnRJbmZvX2NsaWNrRGVzdGluYXRpb24iOiJodHRwczpcL1wvZ2l0aHViLmNvbVwvd2VibWFwcHNybFwvZ2VvaHViXC90cmVlXC8wM2IwMWMxNzkwODNhNTI4ZmE2ZTFhNGQ4OTYxZTU2MmQxOWE1Yjg5XC9yZXNvdXJjZXMlMkZ2aWV3cyUyRmNvbXBvbmVudHMlMkZ0cmFja0xheW91dC5ibGFkZS5waHAiLCJldmVudEluZm9fY29udmVyc2F0aW9uSWQiOiJVb1Y2Vkh6ZHZDbndlVmFLR2FwdVoifQ%3D%3D&citationMarker=9F742443-6C92-4C44-BF58-8F5A7C53B6F1)
     }
 
     loadCSV();
