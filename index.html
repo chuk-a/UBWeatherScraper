@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="="UTF-8">
   <title>UB Weather & PM2.5 Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
@@ -62,7 +62,7 @@
 
     <div class="btn-group">
       <button class="toggle-btn" onclick="document.body.classList.toggle('dark')">🌙 Toggle Dark Mode</button>
-      <button class="toggle-btn" onclick="toggleCompact()">🗂 Toggle Compact Mode</button>
+      <button class="toggle-btn" onclick="document.getElementById('chartGrid').classList.toggle('compact')">🗂 Toggle Compact Mode</button>
       <button class="toggle-btn" onclick="toggleMode()">⏱ Toggle <span id="modeLabel">Hourly</span> Mode</button>
     </div>
 
@@ -80,11 +80,7 @@
   </footer>
 
   <script>
-    let currentMode = "hourly"; // default
-
-    function toggleCompact() {
-      document.getElementById("chartGrid").classList.toggle("compact");
-    }
+    let currentMode = "hourly";
 
     function toggleMode() {
       currentMode = currentMode === "hourly" ? "daily" : "hourly";
@@ -103,20 +99,19 @@
       return { min: Math.min(...vals), max: Math.max(...vals) };
     }
 
-    function aggregateDailyMinMax(timestamps, temps, humidities, winds, fr, eu, cz, yr) {
+    function aggregateDailyMinMax(timestamps, temps, hum, winds, fr, eu, cz, yr) {
       const daily = {};
       timestamps.forEach((ts, i) => {
         const day = ts.split("T")[0];
         if (!daily[day]) daily[day] = { temps: [], hum: [], winds: [], fr: [], eu: [], cz: [], yr: [] };
         daily[day].temps.push(temps[i]);
-        daily[day].hum.push(humidities[i]);
+        daily[day].hum.push(hum[i]);
         daily[day].winds.push(winds[i]);
         daily[day].fr.push(fr[i]);
         daily[day].eu.push(eu[i]);
         daily[day].cz.push(cz[i]);
         daily[day].yr.push(yr[i]);
       });
-
       const days = Object.keys(daily).sort();
       return {
         labels: days,
@@ -147,12 +142,9 @@
     function parseCSV(text) {
       const result = Papa.parse(text.trim(), { header: true, skipEmptyLines: true });
       const data = result.data;
-
-      const timestamps = [], temps = [], hum = [], winds = [];
-      const fr = [], eu = [], cz = [], yr = [];
-
+      const ts = [], temps = [], hum = [], winds = [], fr = [], eu = [], cz = [], yr = [];
       data.forEach(row => {
-        timestamps.push(row.timestamp);
+        ts.push(row.timestamp);
         temps.push(cleanNumber(row.temperature));
         winds.push(cleanNumber(row.wind_speed));
         hum.push(cleanNumber(row.humidity));
@@ -164,77 +156,82 @@
 
       let dataset;
       if (currentMode === "daily") {
-        dataset = aggregateDailyMinMax(timestamps, temps, hum, winds, fr, eu, cz, yr);
+        dataset = aggregateDailyMinMax(ts, temps, hum, winds, fr, eu, cz, yr);
       } else {
-        dataset = {
-          labels: timestamps,
-          temps: temps.map(v => ({min:v, max:v})),
-          humidities: hum.map(v => ({min:v, max:v})),
-          winds: winds.map(v => ({min:v, max:v})),
-          french: fr.map(v => ({min:v, max:v})),
-          eu: eu.map(v => ({min:v, max:v})),
-          czech: cz.map(v => ({min:v, max:v})),
-          yarmag: yr.map(v => ({min:v, max:v}))
-        };
+        dataset = { labels: ts, temps, humidities: hum, winds, french: fr, eu, czech: cz, yarmag: yr };
       }
 
-      // latest values (just use last point)
-      const last = dataset.labels.length-1;
-      document.getElementById('lastUpdated').textContent = `Last updated: ${timestamps[timestamps.length-1]} (Ulaanbaatar time)`;
-      document.getElementById('latestValues').innerHTML = `
-        <strong>Weather:</strong> 🌡 Temp: ${dataset.temps[last].max ?? '-'}°C/${dataset.temps[last].min ?? '-'}°C | 💧 Humidity: ${dataset.humidities[last].max ?? '-'}%/${dataset.humidities[last].min ?? '-'}% | 🌬 Wind: ${dataset.winds[last].max ?? '-'}m/s/${dataset.winds[last].min ?? '-'}m/s<br>
-        <strong>Air Quality:</strong> 🇫🇷 French: ${dataset.french[last].max ?? '-'} / ${dataset.french[last].min ?? '-'} µg/m³ | 🇪🇺 EU: ${dataset.eu[last].max ?? '-'} / ${dataset.eu[last].min ?? '-'} µg/m³ | 🇨🇿 Czech: ${dataset.czech[last].max ?? '-'} / ${dataset.czech[last].min ?? '-'} µg/m³ | 🏙 Yarmag: ${dataset.yarmag[last].max ?? '-'} / ${dataset.yarmag[last].min ?? '-'} µg/m³
-      `;
+      const last = dataset.labels.length - 1;
+      document.getElementById('lastUpdated').textContent = `Last updated: ${ts[ts.length-1]} (Ulaanbaatar time)`;
 
-      renderCharts(dataset.labels, dataset.french, dataset.eu, dataset.czech, dataset.yarmag, dataset.temps, dataset.humidities, dataset.winds);
+      if (currentMode === "daily") {
+        document.getElementById('latestValues').innerHTML = `
+          <strong>Weather:</strong> 🌡 Temp: ${dataset.temps[last].max}/${dataset.temps[last].min}°C | 💧 Hum: ${dataset.humidities[last].max}/${dataset.humidities[last].min}% | 🌬 Wind: ${dataset.winds[last].max}/${dataset.winds[last].min} m/s<br>
+          <strong>Air:</strong> 🇫🇷 ${dataset.french[last].max}/${dataset.french[last].min} | 🇪🇺 ${dataset.eu[last].max}/${dataset.eu[last].min} | 🇨🇿 ${dataset.czech[last].max}/${dataset.czech[last].min} | 🏙 ${dataset.yarmag[last].max}/${dataset.yarmag[last].min} µg/m³
+        `;
+      } else {
+        document.getElementById('latestValues').innerHTML = `
+          <strong>Weather:</strong> 🌡 Temp: ${dataset.temps[last]}°C | 💧 Hum: ${dataset.humidities[last]}% | 🌬 Wind: ${dataset.winds[last]} m/s<br>
+          <strong>Air:</strong> 🇫🇷 ${dataset.french[last]} | 🇪🇺 ${dataset.eu[last]} | 🇨🇿 ${dataset.czech[last]} | 🏙 ${dataset.yarmag[last]} µg/m³
+        `;
+      }
+
+      renderCharts(dataset);
     }
 
-    function renderRangeChart(ctx, labels, data, color, label) {
-      return new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: labels,
-          datasets: [
-            { label: `${label} Max`, data: data.map(v=>v.max), borderColor: color, backgroundColor: color.replace('1)', '0.2)'), pointRadius: 2, tension: 0.3, fill: '-1' },
-            { label: `${label} Min`, data: data.map(v=>v.min), borderColor: 'dark'+color, backgroundColor: color.replace('1)', '0.2)'), pointRadius: 2, tension: 0.3, fill: false }
-          ]
-        },
-        options: { responsive:true, maintainAspectRatio:false,
-          plugins:{ tooltip:{mode:'index',intersect:false}, legend:{position:'top'} },
-          interaction:{mode:'nearest',axis:'x'},
-          scales:{ x:{ title:{display:true,text:'Timestamp'} }, y:{ beginAtZero:true, title:{display:true,text:label} } }
-        }
-      });
+    function renderCharts(ds) {
+      if (currentMode === "daily") renderDailyCharts(ds);
+      else renderHourlyCharts(ds);
     }
 
-    function renderCharts(labels, fr, eu, cz, yr, temps, hum, winds) {
-      const baseOptions = { responsive:true, maintainAspectRatio:false, plugins:{ tooltip:{mode:'index',intersect:false}, legend:{position:'top'} }, interaction:{mode:'nearest',axis:'x'} };
-
+    function renderHourlyCharts(ds) {
       if (Chart.getChart("pmChart")) Chart.getChart("pmChart").destroy();
       new Chart(document.getElementById('pmChart'), {
         type:'line',
-        data:{ labels:labels,
+        data:{ labels:ds.labels,
           datasets:[
-            { label:'French PM2.5 Max', data:fr.map(v=>v.max), borderColor:'rgba(255,99,132,1)', backgroundColor:'rgba(255,99,132,0.2)', pointRadius:2, tension:0.3, fill:'-1' },
-            { label:'French PM2.5 Min', data:fr.map(v=>v.min), borderColor:'rgba(200,50,90,1)', pointRadius:2, tension:0.3 },
-            { label:'EU PM2.5 Max', data:eu.map(v=>v.max), borderColor:'purple', backgroundColor:'rgba(128,0,128,0.2)', pointRadius:2, tension:0.3, fill:'-1' },
-            { label:'EU PM2.5 Min', data:eu.map(v=>v.min), borderColor:'darkmagenta', pointRadius:2, tension:0.3 },
-            { label:'Czech PM2.5 Max', data:cz.map(v=>v.max), borderColor:'rgba(54,162,235,1)', backgroundColor:'rgba(54,162,235,0.2)', pointRadius:2, tension:0.3, fill:'-1' },
-            { label:'Czech PM2.5 Min', data:cz.map(v=>v.min), borderColor:'rgba(40,120,180,1)', pointRadius:2, tension:0.3 },
-            { label:'Yarmag PM2.5 Max', data:yr.map(v=>v.max), borderColor:'rgba(75,192,192,1)', backgroundColor:'rgba(75,192,192,0.2)', pointRadius:2, tension:0.3, fill:'-1' },
-            { label:'Yarmag PM2.5 Min', data:yr.map(v=>v.min), borderColor:'rgba(50,150,150,1)', pointRadius:2, tension:0.3 }
+            { label:'French', data:ds.french, borderColor:'rgba(255,99,132,1)', pointRadius:2, tension:0.3 },
+            { label:'EU', data:ds.eu, borderColor:'purple', pointRadius:2, tension:0.3 },
+            { label:'Czech', data:ds.czech, borderColor:'rgba(54,162,235,1)', pointRadius:2, tension:0.3 },
+            { label:'Yarmag', data:ds.yarmag, borderColor:'rgba(75,192,192,1)', pointRadius:2, tension:0.3 }
           ]
-        }, options:baseOptions
+        }, options:{responsive:true,maintainAspectRatio:false}
       });
 
       if (Chart.getChart("tempChart")) Chart.getChart("tempChart").destroy();
-      renderRangeChart(document.getElementById('tempChart'), labels, temps, 'rgba(255,0,0,1)', 'Temperature (°C)');
+      new Chart(document.getElementById('tempChart'), { type:'line', data:{labels:ds.labels,datasets:[{label:'Temp °C',data:ds.temps,borderColor:'red',pointRadius:2,tension:0.3}]}, options:{responsive:true,maintainAspectRatio:false} });
 
       if (Chart.getChart("humidityChart")) Chart.getChart("humidityChart").destroy();
-      renderRangeChart(document.getElementById('humidityChart'), labels, hum, 'rgba(0,0,255,1)', 'Humidity (%)');
+      new Chart(document.getElementById('humidityChart'), { type:'line', data:{labels:ds.labels,datasets:[{label:'Humidity %',data:ds.humidities,borderColor:'blue',pointRadius:2,tension:0.3}]}, options:{responsive:true,maintainAspectRatio:false} });
 
       if (Chart.getChart("windChart")) Chart.getChart("windChart").destroy();
-      renderRangeChart(document.getElementById('windChart'), labels, winds, 'rgba(0,128,128,1)', 'Wind Speed (m/s)');
+      new Chart(document.getElementById('windChart'), { type:'line', data:{labels:ds.labels,datasets:[{label:'Wind m/s',data:ds.winds,borderColor:'teal',pointRadius:2,tension:0.3}]}, options:{responsive:true,maintainAspectRatio:false} });
+    }
+
+    function renderDailyCharts(ds) {
+      function rangeDataset(label, data, color) {
+        return [
+          { label: label+' Max', data:data.map(v=>v.max), borderColor:color, backgroundColor:color.replace('1)','0.2)'), tension:0.3, fill:'-1', pointRadius:2 },
+          { label: label+' Min', data:data.map(v=>v.min), borderColor:color.replace('1)','0.7)'), tension:0.3, fill:false, pointRadius:2 }
+        ];
+      }
+
+      if (Chart.getChart("pmChart")) Chart.getChart("pmChart").destroy();
+      new Chart(document.getElementById('pmChart'), { type:'line', data:{ labels:ds.labels, datasets:[
+        ...rangeDataset('French', ds.french, 'rgba(255,99,132,1)'),
+        ...rangeDataset('EU', ds.eu, 'rgba(128,0,128,1)'),
+        ...rangeDataset('Czech', ds.czech, 'rgba(54,162,235,1)'),
+        ...rangeDataset('Yarmag', ds.yarmag, 'rgba(75,192,192,1)')
+      ]}, options:{responsive:true,maintainAspectRatio:false} });
+
+      if (Chart.getChart("tempChart")) Chart.getChart("tempChart").destroy();
+      new Chart(document.getElementById('tempChart'), { type:'line', data:{ labels:ds.labels, datasets:rangeDataset('Temp °C', ds.temps, 'rgba(255,0,0,1)')}, options:{responsive:true,maintainAspectRatio:false} });
+
+      if (Chart.getChart("humidityChart")) Chart.getChart("humidityChart").destroy();
+      new Chart(document.getElementById('humidityChart'), { type:'line', data:{ labels:ds.labels, datasets:rangeDataset('Humidity %', ds.humidities, 'rgba(0,0,255,1)')}, options:{responsive:true,maintainAspectRatio:false} });
+
+      if (Chart.getChart("windChart")) Chart.getChart("windChart").destroy();
+      new Chart(document.getElementById('windChart'), { type:'line', data:{ labels:ds.labels, datasets:rangeDataset('Wind m/s', ds.winds, 'rgba(0,128,128,1)')}, options:{responsive:true,maintainAspectRatio:false} });
     }
 
     loadCSV();
