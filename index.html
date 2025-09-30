@@ -6,75 +6,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <style>
-    body {
-      font-family: 'Inter', sans-serif;
-      background: #f9f9f9;
-      color: #333;
-      margin: 0;
-      padding: 0;
-    }
-    header, footer {
-      text-align: center;
-      padding: 10px 0;
-      background: #eee;
-    }
-    nav a {
-      margin: 0 10px;
-      text-decoration: none;
-      color: #0077cc;
-    }
-    .container {
-      max-width: 1000px;
-      margin: auto;
-      padding: 20px;
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 40px;
-    }
-    @media (min-width: 768px) {
-      .grid {
-        grid-template-columns: 1fr 1fr;
-      }
-    }
-    canvas {
-      width: 100%;
-      height: 300px;
-      background: white;
-      border-radius: 8px;
-    }
-    h1, p {
-      text-align: center;
-    }
-    #lastUpdated {
-      font-weight: bold;
-      margin-top: 10px;
-    }
-    #pmAlert {
-      font-weight: bold;
-      color: red;
-      margin-bottom: 20px;
-      text-align: center;
-    }
-    .dark {
-      background: #121212;
-      color: #eee;
-    }
-    .dark canvas {
-      background: #1e1e1e;
-    }
-    .toggle-btn {
-      display: block;
-      margin: 10px auto;
-      padding: 6px 12px;
-      background: #0077cc;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
+    body { font-family: 'Inter', sans-serif; background: #f9f9f9; color: #333; margin: 0; padding: 0; }
+    header, footer { text-align: center; padding: 10px 0; background: #eee; }
+    nav a { margin: 0 10px; text-decoration: none; color: #0077cc; }
+    .container { max-width: 1000px; margin: auto; padding: 20px; }
+    .grid { display: grid; grid-template-columns: 1fr; gap: 40px; }
+    @media (min-width: 768px) { .grid { grid-template-columns: 1fr 1fr; } }
+    canvas { width: 100%; height: 300px; background: white; border-radius: 8px; }
+    h1, p { text-align: center; }
+    #lastUpdated { font-weight: bold; margin-top: 10px; }
+    #pmAlert { font-weight: bold; color: red; margin-bottom: 20px; text-align: center; }
+    .dark { background: #121212; color: #eee; }
+    .dark canvas { background: #1e1e1e; }
+    .toggle-btn { display: block; margin: 10px auto; padding: 6px 12px; background: #0077cc; color: white; border: none; border-radius: 4px; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -134,24 +80,22 @@
     }
 
     function parseCSV(text) {
-      const rows = text.trim().split('\n');
-      const header = rows[0].split(',');
-      const dataRows = rows.slice(1);
+      const result = Papa.parse(text.trim(), { header: true, skipEmptyLines: true });
+      const data = result.data;
 
       const timestamps = [], temps = [], humidities = [], windSpeeds = [];
       const french = [], eu = [], czech = [], yarmag = [];
 
-      for (const row of dataRows) {
-        const cols = row.split(',');
-        timestamps.push(cols[0]); // ISO timestamp
-        temps.push(cleanNumber(cols[2]));
-        windSpeeds.push(cleanNumber(cols[3]));
-        humidities.push(cleanNumber(cols[4]));
-        french.push(cleanNumber(cols[5]));
-        eu.push(cleanNumber(cols[6]));
-        czech.push(cleanNumber(cols[7]));
-        yarmag.push(cleanNumber(cols[8]));
-      }
+      data.forEach(row => {
+        timestamps.push(row.timestamp);
+        temps.push(cleanNumber(row.temperature));
+        windSpeeds.push(cleanNumber(row.wind_speed));
+        humidities.push(cleanNumber(row.humidity));
+        french.push(cleanNumber(row.pm25_french));
+        eu.push(cleanNumber(row.pm25_eu));
+        czech.push(cleanNumber(row.pm25_czech));
+        yarmag.push(cleanNumber(row.pm25_yarmag));
+      });
 
       const latest = timestamps[timestamps.length - 1];
       document.getElementById('lastUpdated').textContent = `Last updated: ${latest} (Ulaanbaatar time)`;
@@ -173,55 +117,17 @@
         data: {
           labels: timestamps,
           datasets: [
-            {
-              label: 'French Embassy PM2.5',
-              data: french,
-              borderColor: 'rgba(255,99,132,1)',
-              backgroundColor: 'rgba(255,99,132,0.2)',
-              pointRadius: 2,
-              tension: 0.3,
-              fill: true
-            },
-            {
-              label: 'EU PM2.5',
-              data: eu,
-              borderColor: 'purple',
-              backgroundColor: 'rgba(128,0,128,0.2)',
-              pointRadius: 2,
-              tension: 0.3,
-              fill: true
-            },
-            {
-              label: 'Czech Embassy PM2.5',
-              data: czech,
-              borderColor: 'rgba(54,162,235,1)',
-              backgroundColor: 'rgba(54,162,235,0.2)',
-              pointRadius: 2,
-              tension: 0.3,
-              fill: true
-            },
-            {
-              label: 'Yarmag Garden City PM2.5',
-              data: yarmag,
-              borderColor: 'rgba(75,192,192,1)',
-              backgroundColor: 'rgba(75,192,192,0.2)',
-              pointRadius: 2,
-              tension: 0.3,
-              fill: true
-            }
+            { label: 'French Embassy PM2.5', data: french, borderColor: 'rgba(255,99,132,1)', backgroundColor: 'rgba(255,99,132,0.2)', pointRadius: 2, tension: 0.3, fill: true },
+            { label: 'EU PM2.5', data: eu, borderColor: 'purple', backgroundColor: 'rgba(128,0,128,0.2)', pointRadius: 2, tension: 0.3, fill: true },
+            { label: 'Czech Embassy PM2.5', data: czech, borderColor: 'rgba(54,162,235,1)', backgroundColor: 'rgba(54,162,235,0.2)', pointRadius: 2, tension: 0.3, fill: true },
+            { label: 'Yarmag Garden City PM2.5', data: yarmag, borderColor: 'rgba(75,192,192,1)', backgroundColor: 'rgba(75,192,192,0.2)', pointRadius: 2, tension: 0.3, fill: true }
           ]
         },
         options: {
           responsive: true,
           interaction: { mode: 'nearest', axis: 'x' },
-          plugins: {
-            tooltip: { mode: 'index', intersect: false },
-            legend: { position: 'top' }
-          },
-          scales: {
-            x: { title: { display: true, text: 'Timestamp' } },
-            y: { title: { display: true, text: 'PM2.5 (µg/m³)' }, beginAtZero: true }
-          }
+          plugins: { tooltip: { mode: 'index', intersect: false }, legend: { position: 'top' } },
+          scales: { x: { title: { display: true, text: 'Timestamp' } }, y: { title: { display: true, text: 'PM2.5 (µg/m³)' }, beginAtZero: true } }
         }
       });
 
@@ -236,14 +142,8 @@
         },
         options: {
           responsive: true,
-          plugins: {
-            tooltip: { mode: 'index', intersect: false },
-            legend: { position: 'top' }
-          },
-          scales: {
-            x: { title: { display: true, text: 'Timestamp' } },
-            y: { title: { display: true, text: 'Value' }, beginAtZero: true }
-          }
+          plugins: { tooltip: { mode: 'index', intersect: false }, legend: { position: 'top' } },
+          scales: { x: { title: { display: true, text: 'Timestamp' } }, y: { title: { display: true, text: 'Value' }, beginAtZero: true } }
         }
       });
 
@@ -252,33 +152,19 @@
         data: {
           labels: timestamps,
           datasets: [
-            {
-              label: 'Wind Speed (m/s)',
-              data: windSpeeds,
-              borderColor: 'teal',
-              backgroundColor: 'rgba(0,128,128,0.2)',
-              pointRadius: 2,
-              tension: 0.3,
-              fill: true
-            }
+            { label: 'Wind Speed (m/s)', data: windSpeeds, borderColor: 'teal', backgroundColor: 'rgba(0,128,128,0.2)', pointRadius: 2, tension: 0.3, fill: true }
           ]
         },
         options: {
           responsive: true,
-          plugins: {
-            tooltip: { mode: 'index', intersect: false },
-            legend: { position: 'top' }
-          },
-          scales: {
-            x: { title: { display: true, text: 'Timestamp' } },
-            y: { title: { display: true, text: 'Wind Speed (m/s)' }, beginAtZero: true }
-          }
+          plugins: { tooltip: { mode: 'index', intersect: false }, legend: { position: 'top' } },
+          scales: { x: { title: { display: true, text: 'Timestamp' } }, y: { title: { display: true, text: 'Wind Speed (m/s)' }, beginAtZero: true } }
         }
       });
     }
 
     loadCSV();
-    setInterval(loadCSV, 1800000); // refresh every 30 minutes
+    setInterval(loadCSV, 1800000);
   </script>
 </body>
 </html>
