@@ -102,19 +102,14 @@
   </div>
 
   <footer>
-    Data from weather.gov.mn & embassies · Updated every 30 min · <a href="https://github.com/chuk-a/chuk-a.github.io">GitHub</a>
+    Data from weather.gov.mn & embassies · Updated every 30 min · 
+    <a href="https://github.com/chuk-a/chuk-a.github.io">GitHub</a>
   </footer>
 
   <script>
-    function getColor(value) {
-      if (value <= 12) return 'green';
-      if (value <= 35) return 'yellow';
-      if (value <= 55) return 'orange';
-      return 'red';
-    }
-
-    function safeParse(val) {
-      return val === "ERROR" ? null : parseFloat(val);
+    function cleanNumber(val) {
+      if (!val || val === "ERROR") return null;
+      return parseFloat(val.replace(/[^\d.-]/g, '')); 
     }
 
     async function loadCSV() {
@@ -148,14 +143,14 @@
 
       for (const row of dataRows) {
         const cols = row.split(',');
-        timestamps.push(cols[0]);
-        temps.push(safeParse(cols[2]));
-        windSpeeds.push(safeParse(cols[3]));
-        humidities.push(safeParse(cols[4]));
-        french.push(safeParse(cols[5]));
-        eu.push(safeParse(cols[6]));
-        czech.push(safeParse(cols[7]));
-        yarmag.push(safeParse(cols[8]));
+        timestamps.push(cols[0]); // ISO timestamp
+        temps.push(cleanNumber(cols[2]));
+        windSpeeds.push(cleanNumber(cols[3]));
+        humidities.push(cleanNumber(cols[4]));
+        french.push(cleanNumber(cols[5]));
+        eu.push(cleanNumber(cols[6]));
+        czech.push(cleanNumber(cols[7]));
+        yarmag.push(cleanNumber(cols[8]));
       }
 
       const latest = timestamps[timestamps.length - 1];
@@ -230,27 +225,27 @@
         }
       });
 
-     new Chart(document.getElementById('weatherChart'), {
-      type: 'line',
-      data: {
-        labels: timestamps,
-        datasets: [
-          { label: 'Temperature (°C)', data: temps, borderColor: 'red', pointRadius: 2, tension: 0.3, fill: true },
-          { label: 'Humidity (%)', data: humidities, borderColor: 'blue', pointRadius: 2, tension: 0.3, fill: true }
-        ]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          tooltip: { mode: 'index', intersect: false },
-          legend: { position: 'top' }
+      new Chart(document.getElementById('weatherChart'), {
+        type: 'line',
+        data: {
+          labels: timestamps,
+          datasets: [
+            { label: 'Temperature (°C)', data: temps, borderColor: 'red', pointRadius: 2, tension: 0.3, fill: true },
+            { label: 'Humidity (%)', data: humidities, borderColor: 'blue', pointRadius: 2, tension: 0.3, fill: true }
+          ]
         },
-        scales: {
-          x: { title: { display: true, text: 'Timestamp' } },
-          y: { title: { display: true, text: 'Value' }, beginAtZero: true }
+        options: {
+          responsive: true,
+          plugins: {
+            tooltip: { mode: 'index', intersect: false },
+            legend: { position: 'top' }
+          },
+          scales: {
+            x: { title: { display: true, text: 'Timestamp' } },
+            y: { title: { display: true, text: 'Value' }, beginAtZero: true }
+          }
         }
-      }
-    });
+      });
 
       new Chart(document.getElementById('windChart'), {
         type: 'line',
@@ -287,4 +282,3 @@
   </script>
 </body>
 </html>
-
