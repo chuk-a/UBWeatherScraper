@@ -11,7 +11,7 @@
     body { font-family: 'Inter', sans-serif; background: #f9f9f9; color: #333; margin: 0; padding: 0; }
     header, footer { text-align: center; padding: 10px 0; background: #eee; }
     nav a { margin: 0 10px; text-decoration: none; color: #0077cc; }
-    .container { max-width: 1000px; margin: auto; padding: 20px; }
+    .container { max-width: 1200px; margin: auto; padding: 20px; }
 
     /* Grid for charts */
     .grid {
@@ -19,34 +19,42 @@
       grid-template-columns: 1fr;
       gap: 40px;
     }
-    @media (min-width: 768px) {
+    @media (min-width: 768px) and (max-width: 1199px) {
       .grid {
-        grid-template-columns: repeat(2, 1fr); /* equal columns */
-        align-items: stretch;                  /* equal height */
+        grid-template-columns: repeat(2, 1fr); /* two equal columns */
+        align-items: stretch;
+      }
+    }
+    @media (min-width: 1200px) {
+      .grid {
+        grid-template-columns: 1fr; /* back to single-column on very large screens */
       }
     }
 
     /* Chart containers */
     .chart-container {
-      display: flex;              /* let canvas stretch */
+      display: flex;
       align-items: stretch;
       justify-content: center;
       position: relative;
       width: 100%;
-      height: 300px;              /* mobile height */
+      height: 300px;  /* mobile default */
       background: white;
       border-radius: 8px;
       padding: 10px;
       box-sizing: border-box;
     }
     .chart-container canvas {
-      flex: 1;                     /* fill container */
+      flex: 1;
       display: block;
       width: 100% !important;
       height: 100% !important;
     }
     @media (min-width: 768px) {
-      .chart-container { height: 350px; } /* desktop height */
+      .chart-container { height: 350px; } /* desktop */
+    }
+    @media (min-width: 1200px) {
+      .chart-container { height: 450px; } /* taller for big screens */
     }
 
     h1, p { text-align: center; }
