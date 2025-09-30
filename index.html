@@ -78,9 +78,13 @@
     .wind { color: #16a085; }
 
     #pmAlert { font-weight: bold; color: red; margin-bottom: 20px; text-align: center; }
+
+    /* Dark mode */
     .dark { background: #121212; color: #eee; }
+    .dark header, .dark footer { background: #1e1e1e; }
     .dark .chart-container { background: #1e1e1e; }
-    .value-card { background: var(--card-bg, white); }
+    .dark .value-card { background: #1e1e1e; box-shadow: 0 2px 6px rgba(255,255,255,0.05); }
+
     .toggle-btn {
       display: inline-block;
       margin: 10px;
@@ -113,7 +117,7 @@
     <p id="pmAlert"></p>
 
     <div class="btn-group">
-      <button class="toggle-btn" onclick="document.body.classList.toggle('dark')">🌙 Toggle Dark Mode</button>
+      <button class="toggle-btn" onclick="toggleDarkMode()">🌙 Toggle Dark Mode</button>
       <button class="toggle-btn" onclick="toggleCompact()">🗂 Toggle Compact Mode</button>
     </div>
 
@@ -146,6 +150,35 @@
       if (value <= 35) return "goldenrod";
       if (value <= 55) return "orange";
       return "red";
+    }
+
+    function updateChartTheme(isDark) {
+      const textColor = isDark ? '#eee' : '#333';
+      const gridColor = isDark ? '#444' : '#ddd';
+
+      Chart.defaults.color = textColor;
+
+      Chart.overrides.line.scales = {
+        x: {
+          ticks: { color: textColor },
+          grid: { color: gridColor },
+          title: { color: textColor }
+        },
+        y: {
+          ticks: { color: textColor },
+          grid: { color: gridColor },
+          title: { color: textColor }
+        }
+      };
+
+      // Re-render charts
+      loadCSV();
+    }
+
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark');
+      const isDark = document.body.classList.contains('dark');
+      updateChartTheme(isDark);
     }
 
     async function loadCSV() {
@@ -215,7 +248,6 @@
         </div>
       `;
 
-
       // Alerts
       let alertMsg = '';
       if ([latestFrench, latestCzech, latestYarmag, latestEU].some(v => v > 55)) {
@@ -232,8 +264,12 @@
       const baseOptions = {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { tooltip: { mode: 'index', intersect: false }, legend: { position: 'top' } },
-        interaction: { mode: 'nearest', axis: 'x' }
+        plugins: { tooltip: { mode: 'index', intersect: false }, legend: { position: 'top', labels: { color: Chart.defaults.color } } },
+        interaction: { mode: 'nearest', axis: 'x' },
+        scales: {
+          x: { ticks: { color: Chart.defaults.color }, grid: { color: '#ddd' }, title: { display: true, text: 'Timestamp', color: Chart.defaults.color } },
+          y: { ticks: { color: Chart.defaults.color }, grid: { color: '#ddd' }, title: { display: true, text: '', color: Chart.defaults.color } }
+        }
       };
 
       // --- PM2.5 ---
@@ -249,7 +285,13 @@
             { label: 'Yarmag Garden City PM2.5', data: yarmag, borderColor: 'rgba(75,192,192,1)', backgroundColor: 'rgba(75,192,192,0.2)', pointRadius: 2, tension: 0.3, fill: true }
           ]
         },
-        options: { ...baseOptions, scales: { x: { title: { display: true, text: 'Timestamp' } }, y: { title: { display: true, text: 'PM2.5 (µg/m³)' }, beginAtZero: true } } }
+        options: { 
+          ...baseOptions, 
+          scales: { 
+            ...baseOptions.scales, 
+            y: { ...baseOptions.scales.y, title: { display: true, text: 'PM2.5 (µg/m³)', color: Chart.defaults.color } } 
+          } 
+        }
       });
 
       // --- Temperature ---
@@ -262,7 +304,13 @@
             { label: 'Temperature (°C)', data: temps, borderColor: 'red', backgroundColor: 'rgba(255,0,0,0.2)', pointRadius: 2, tension: 0.3, fill: true }
           ]
         },
-        options: { ...baseOptions, scales: { x: { title: { display: true, text: 'Timestamp' } }, y: { title: { display: true, text: 'Temperature (°C)' }, beginAtZero: true } } }
+        options: { 
+          ...baseOptions, 
+          scales: { 
+            ...baseOptions.scales, 
+            y: { ...baseOptions.scales.y, title: { display: true, text: 'Temperature (°C)', color: Chart.defaults.color } } 
+          } 
+        }
       });
 
       // --- Humidity ---
@@ -275,7 +323,13 @@
             { label: 'Humidity (%)', data: humidities, borderColor: 'blue', backgroundColor: 'rgba(0,0,255,0.2)', pointRadius: 2, tension: 0.3, fill: true }
           ]
         },
-        options: { ...baseOptions, scales: { x: { title: { display: true, text: 'Timestamp' } }, y: { title: { display: true, text: 'Humidity (%)' }, beginAtZero: true } } }
+        options: { 
+          ...baseOptions, 
+          scales: { 
+            ...baseOptions.scales, 
+            y: { ...baseOptions.scales.y, title: { display: true, text: 'Humidity (%)', color: Chart.defaults.color } } 
+          } 
+        }
       });
 
       // --- Wind ---
@@ -288,7 +342,13 @@
             { label: 'Wind Speed (m/s)', data: windSpeeds, borderColor: 'teal', backgroundColor: 'rgba(0,128,128,0.2)', pointRadius: 2, tension: 0.3, fill: true }
           ]
         },
-        options: { ...baseOptions, scales: { x: { title: { display: true, text: 'Timestamp' } }, y: { title: { display: true, text: 'Wind Speed (m/s)' }, beginAtZero: true } } }
+        options: { 
+          ...baseOptions, 
+          scales: { 
+            ...baseOptions.scales, 
+            y: { ...baseOptions.scales.y, title: { display: true, text: 'Wind Speed (m/s)', color: Chart.defaults.color } } 
+          } 
+        }
       });
     }
 
