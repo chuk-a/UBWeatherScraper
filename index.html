@@ -12,25 +12,43 @@
     header, footer { text-align: center; padding: 10px 0; background: #eee; }
     nav a { margin: 0 10px; text-decoration: none; color: #0077cc; }
     .container { max-width: 1000px; margin: auto; padding: 20px; }
-    .grid { display: grid; grid-template-columns: 1fr; gap: 40px; }
-    @media (min-width: 768px) { .grid { grid-template-columns: 1fr 1fr; } }
+
+    /* Grid for charts */
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 40px;
+    }
+    @media (min-width: 768px) {
+      .grid {
+        grid-template-columns: repeat(2, 1fr); /* equal columns */
+        align-items: stretch;                  /* equal height */
+      }
+    }
+
+    /* Chart containers */
     .chart-container {
+      display: flex;              /* let canvas stretch */
+      align-items: stretch;
+      justify-content: center;
       position: relative;
       width: 100%;
-      height: 300px;  /* mobile default */
+      height: 300px;              /* mobile height */
       background: white;
       border-radius: 8px;
       padding: 10px;
-      box-sizing: border-box; /* prevent padding from altering width */
+      box-sizing: border-box;
     }
     .chart-container canvas {
-      display: block;            /* prevents inline-block spacing */
-      width: 100% !important;    /* lock width */
-      height: 100% !important;   /* lock height */
+      flex: 1;                     /* fill container */
+      display: block;
+      width: 100% !important;
+      height: 100% !important;
     }
     @media (min-width: 768px) {
-      .chart-container { height: 350px; } /* desktop */
+      .chart-container { height: 350px; } /* desktop height */
     }
+
     h1, p { text-align: center; }
     #lastUpdated { font-weight: bold; margin-top: 10px; }
     #pmAlert { font-weight: bold; color: red; margin-bottom: 20px; text-align: center; }
@@ -134,7 +152,7 @@
     function renderCharts(timestamps, french, eu, czech, yarmag, temps, humidities, windSpeeds) {
       const baseOptions = {
         responsive: true,
-        maintainAspectRatio: false, // important for fixed container sizing
+        maintainAspectRatio: false,
         plugins: { tooltip: { mode: 'index', intersect: false }, legend: { position: 'top' } },
         interaction: { mode: 'nearest', axis: 'x' }
       };
