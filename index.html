@@ -195,6 +195,7 @@
         interaction: { mode: 'nearest', axis: 'x' }
       };
 
+      // --- PM2.5 ---
       if (Chart.getChart("pmChart")) Chart.getChart("pmChart").destroy();
       new Chart(document.getElementById('pmChart'), {
         type: 'line',
@@ -210,19 +211,53 @@
         options: { ...baseOptions, scales: { x: { title: { display: true, text: 'Timestamp' } }, y: { title: { display: true, text: 'PM2.5 (µg/m³)' }, beginAtZero: true } } }
       });
 
+      // --- Weather (dual-axis: Temp left, Humidity right) ---
       if (Chart.getChart("weatherChart")) Chart.getChart("weatherChart").destroy();
       new Chart(document.getElementById('weatherChart'), {
         type: 'line',
         data: {
           labels: timestamps,
           datasets: [
-            { label: 'Temperature (°C)', data: temps, borderColor: 'red', pointRadius: 2, tension: 0.3, fill: true },
-            { label: 'Humidity (%)', data: humidities, borderColor: 'blue', pointRadius: 2, tension: 0.3, fill: true }
+            { 
+              label: 'Temperature (°C)', 
+              data: temps, 
+              borderColor: 'red', 
+              backgroundColor: 'rgba(255,0,0,0.2)',
+              pointRadius: 2, tension: 0.3, fill: true,
+              yAxisID: 'y'
+            },
+            { 
+              label: 'Humidity (%)', 
+              data: humidities, 
+              borderColor: 'blue', 
+              backgroundColor: 'rgba(0,0,255,0.2)',
+              pointRadius: 2, tension: 0.3, fill: true,
+              yAxisID: 'y1'
+            }
           ]
         },
-        options: { ...baseOptions, scales: { x: { title: { display: true, text: 'Timestamp' } }, y: { title: { display: true, text: 'Value' }, beginAtZero: true } } }
+        options: {
+          ...baseOptions,
+          scales: {
+            x: { title: { display: true, text: 'Timestamp' } },
+            y: { 
+              type: 'linear', 
+              position: 'left',
+              title: { display: true, text: 'Temperature (°C)' },
+              beginAtZero: true
+            },
+            y1: { 
+              type: 'linear', 
+              position: 'right',
+              title: { display: true, text: 'Humidity (%)' },
+              beginAtZero: true,
+              grid: { drawOnChartArea: false }
+            }
+          }
+        }
       });
 
+      // --- Wind ---
       if (Chart.getChart("windChart")) Chart.getChart("windChart").destroy();
       new Chart(document.getElementById('windChart'), {
         type: 'line',
