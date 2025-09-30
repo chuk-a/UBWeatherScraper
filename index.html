@@ -14,17 +14,22 @@
     .container { max-width: 1000px; margin: auto; padding: 20px; }
     .grid { display: grid; grid-template-columns: 1fr; gap: 40px; }
     @media (min-width: 768px) { .grid { grid-template-columns: 1fr 1fr; } }
-    .grid canvas {
+    .chart-container {
+      position: relative;
       width: 100%;
-      height: 350px !important; /* equal height for all charts */
+      height: 300px;  /* default height */
       background: white;
       border-radius: 8px;
+      padding: 10px;
+    }
+    @media (min-width: 768px) {
+      .chart-container { height: 350px; } /* bigger on desktop */
     }
     h1, p { text-align: center; }
     #lastUpdated { font-weight: bold; margin-top: 10px; }
     #pmAlert { font-weight: bold; color: red; margin-bottom: 20px; text-align: center; }
     .dark { background: #121212; color: #eee; }
-    .dark canvas { background: #1e1e1e; }
+    .dark .chart-container { background: #1e1e1e; }
     .toggle-btn { display: block; margin: 10px auto; padding: 6px 12px; background: #0077cc; color: white; border: none; border-radius: 4px; cursor: pointer; }
   </style>
 </head>
@@ -46,9 +51,9 @@
     <button class="toggle-btn" onclick="document.body.classList.toggle('dark')">🌙 Toggle Dark Mode</button>
 
     <div class="grid">
-      <canvas id="pmChart"></canvas>
-      <canvas id="weatherChart"></canvas>
-      <canvas id="windChart"></canvas>
+      <div class="chart-container"><canvas id="pmChart"></canvas></div>
+      <div class="chart-container"><canvas id="weatherChart"></canvas></div>
+      <div class="chart-container"><canvas id="windChart"></canvas></div>
     </div>
   </div>
 
@@ -117,6 +122,13 @@
       }
       document.getElementById('pmAlert').textContent = alertMsg;
 
+      const baseOptions = {
+        responsive: true,
+        maintainAspectRatio: false, // fill parent container height
+        plugins: { tooltip: { mode: 'index', intersect: false }, legend: { position: 'top' } },
+        interaction: { mode: 'nearest', axis: 'x' }
+      };
+
       new Chart(document.getElementById('pmChart'), {
         type: 'line',
         data: {
@@ -128,13 +140,7 @@
             { label: 'Yarmag Garden City PM2.5', data: yarmag, borderColor: 'rgba(75,192,192,1)', backgroundColor: 'rgba(75,192,192,0.2)', pointRadius: 2, tension: 0.3, fill: true }
           ]
         },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,   // 🔑 ensures fixed height
-          interaction: { mode: 'nearest', axis: 'x' },
-          plugins: { tooltip: { mode: 'index', intersect: false }, legend: { position: 'top' } },
-          scales: { x: { title: { display: true, text: 'Timestamp' } }, y: { title: { display: true, text: 'PM2.5 (µg/m³)' }, beginAtZero: true } }
-        }
+        options: { ...baseOptions, scales: { x: { title: { display: true, text: 'Timestamp' } }, y: { title: { display: true, text: 'PM2.5 (µg/m³)' }, beginAtZero: true } } }
       });
 
       new Chart(document.getElementById('weatherChart'), {
@@ -146,12 +152,7 @@
             { label: 'Humidity (%)', data: humidities, borderColor: 'blue', pointRadius: 2, tension: 0.3, fill: true }
           ]
         },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,   // 🔑 ensures fixed height
-          plugins: { tooltip: { mode: 'index', intersect: false }, legend: { position: 'top' } },
-          scales: { x: { title: { display: true, text: 'Timestamp' } }, y: { title: { display: true, text: 'Value' }, beginAtZero: true } }
-        }
+        options: { ...baseOptions, scales: { x: { title: { display: true, text: 'Timestamp' } }, y: { title: { display: true, text: 'Value' }, beginAtZero: true } } }
       });
 
       new Chart(document.getElementById('windChart'), {
@@ -162,12 +163,7 @@
             { label: 'Wind Speed (m/s)', data: windSpeeds, borderColor: 'teal', backgroundColor: 'rgba(0,128,128,0.2)', pointRadius: 2, tension: 0.3, fill: true }
           ]
         },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,   // 🔑 ensures fixed height
-          plugins: { tooltip: { mode: 'index', intersect: false }, legend: { position: 'top' } },
-          scales: { x: { title: { display: true, text: 'Timestamp' } }, y: { title: { display: true, text: 'Wind Speed (m/s)' }, beginAtZero: true } }
-        }
+        options: { ...baseOptions, scales: { x: { title: { display: true, text: 'Timestamp' } }, y: { title: { display: true, text: 'Wind Speed (m/s)' }, beginAtZero: true } } }
       });
     }
 
