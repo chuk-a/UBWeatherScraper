@@ -13,30 +13,19 @@
     nav a { margin: 0 10px; text-decoration: none; color: #0077cc; }
     .container { max-width: 1200px; margin: auto; padding: 20px; }
 
-    /* Grid for charts */
     .grid {
       display: grid;
       grid-template-columns: 1fr;
       gap: 40px;
     }
     @media (min-width: 768px) and (max-width: 1199px) {
-      .grid {
-        grid-template-columns: repeat(2, 1fr);
-        align-items: stretch;
-      }
+      .grid { grid-template-columns: repeat(2, 1fr); align-items: stretch; }
     }
     @media (min-width: 1200px) {
-      .grid {
-        grid-template-columns: 1fr; /* back to single-column on very large screens */
-      }
+      .grid { grid-template-columns: 1fr; }
     }
+    .grid.compact { grid-template-columns: repeat(2, 1fr) !important; }
 
-    /* Compact mode = always 2 columns */
-    .grid.compact {
-      grid-template-columns: repeat(2, 1fr) !important;
-    }
-
-    /* Chart containers */
     .chart-container {
       display: flex;
       align-items: stretch;
@@ -55,15 +44,17 @@
       width: 100% !important;
       height: 100% !important;
     }
-    @media (min-width: 768px) {
-      .chart-container { height: 350px; }
-    }
-    @media (min-width: 1200px) {
-      .chart-container { height: 450px; }
-    }
+    @media (min-width: 768px) { .chart-container { height: 350px; } }
+    @media (min-width: 1200px) { .chart-container { height: 450px; } }
 
     h1, p { text-align: center; }
     #lastUpdated { font-weight: bold; margin-top: 10px; }
+    #latestValues {
+      text-align: center;
+      margin: 10px 0;
+      font-size: 0.95rem;
+      line-height: 1.4;
+    }
     #pmAlert { font-weight: bold; color: red; margin-bottom: 20px; text-align: center; }
     .dark { background: #121212; color: #eee; }
     .dark .chart-container { background: #1e1e1e; }
@@ -77,10 +68,7 @@
       border-radius: 4px;
       cursor: pointer;
     }
-    .btn-group {
-      text-align: center;
-      margin-bottom: 20px;
-    }
+    .btn-group { text-align: center; margin-bottom: 20px; }
   </style>
 </head>
 <body>
@@ -97,6 +85,7 @@
     <p>Live data from weather.gov.mn and embassy PM2.5 monitors</p>
     <p><a href="weather_log.csv" download>📥 Download CSV</a></p>
     <p id="lastUpdated">Last updated: loading…</p>
+    <div id="latestValues">Loading latest values…</div>
     <p id="pmAlert"></p>
 
     <div class="btn-group">
@@ -131,7 +120,6 @@
         'weather_log.csv',
         'https://raw.githubusercontent.com/chuk-a/chuk-a.github.io/main/weather_log.csv'
       ];
-
       for (const src of sources) {
         try {
           const res = await fetch(src);
@@ -143,7 +131,6 @@
           console.warn(`Failed to load from ${src}:`, err);
         }
       }
-
       document.getElementById('lastUpdated').textContent = '⚠️ Failed to load data';
     }
 
@@ -165,17 +152,34 @@
         yarmag.push(cleanNumber(row.pm25_yarmag));
       });
 
-      const latest = timestamps[timestamps.length - 1];
+      const latestIdx = timestamps.length - 1;
+      const latest = timestamps[latestIdx];
       document.getElementById('lastUpdated').textContent = `Last updated: ${latest} (Ulaanbaatar time)`;
 
-      const latestFrench = french[french.length - 1];
-      const latestCzech = czech[czech.length - 1];
-      const latestYarmag = yarmag[yarmag.length - 1];
+      const latestFrench = french[latestIdx];
+      const latestEU = eu[latestIdx];
+      const latestCzech = czech[latestIdx];
+      const latestYarmag = yarmag[latestIdx];
+      const latestTemp = temps[latestIdx];
+      const latestHumidity = humidities[latestIdx];
+      const latestWind = windSpeeds[latestIdx];
 
+      // Show latest values in summary
+      document.getElementById('latestValues').innerHTML = `
+        🌡 Temp: ${latestTemp ?? '-'} °C |
+        💧 Humidity: ${latestHumidity ?? '-'} % |
+        🌬 Wind: ${latestWind ?? '-'} m/s<br>
+        🇫🇷 French: ${latestFrench ?? '-'} µg/m³ |
+        🇪🇺 EU: ${latestEU ?? '-'} µg/m³ |
+        🇨🇿 Czech: ${latestCzech ?? '-'} µg/m³ |
+        🏙 Yarmag: ${latestYarmag ?? '-'} µg/m³
+      `;
+
+      // Alerts
       let alertMsg = '';
-      if ([latestFrench, latestCzech, latestYarmag].some(v => v > 55)) {
+      if ([latestFrench, latestCzech, latestYarmag, latestEU].some(v => v > 55)) {
         alertMsg = '🚨 Unhealthy air quality. Limit outdoor activity.';
-      } else if ([latestFrench, latestCzech, latestYarmag].some(v => v > 35)) {
+      } else if ([latestFrench, latestCzech, latestYarmag, latestEU].some(v => v > 35)) {
         alertMsg = '⚠️ Air quality may affect sensitive groups.';
       }
       document.getElementById('pmAlert').textContent = alertMsg;
@@ -191,7 +195,6 @@
         interaction: { mode: 'nearest', axis: 'x' }
       };
 
-      // --- PM2.5 ---
       if (Chart.getChart("pmChart")) Chart.getChart("pmChart").destroy();
       new Chart(document.getElementById('pmChart'), {
         type: 'line',
@@ -207,7 +210,6 @@
         options: { ...baseOptions, scales: { x: { title: { display: true, text: 'Timestamp' } }, y: { title: { display: true, text: 'PM2.5 (µg/m³)' }, beginAtZero: true } } }
       });
 
-      // --- Weather ---
       if (Chart.getChart("weatherChart")) Chart.getChart("weatherChart").destroy();
       new Chart(document.getElementById('weatherChart'), {
         type: 'line',
@@ -221,7 +223,6 @@
         options: { ...baseOptions, scales: { x: { title: { display: true, text: 'Timestamp' } }, y: { title: { display: true, text: 'Value' }, beginAtZero: true } } }
       });
 
-      // --- Wind ---
       if (Chart.getChart("windChart")) Chart.getChart("windChart").destroy();
       new Chart(document.getElementById('windChart'), {
         type: 'line',
@@ -236,7 +237,7 @@
     }
 
     loadCSV();
-    setInterval(loadCSV, 1800000); // refresh every 30 min
+    setInterval(loadCSV, 1800000);
   </script>
 </body>
 </html>
