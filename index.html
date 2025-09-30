@@ -53,7 +53,7 @@
       text-align: center;
       margin: 10px 0;
       font-size: 0.95rem;
-      line-height: 1.4;
+      line-height: 1.5;
     }
     #pmAlert { font-weight: bold; color: red; margin-bottom: 20px; text-align: center; }
     .dark { background: #121212; color: #eee; }
@@ -166,15 +166,10 @@
       const latestHumidity = humidities[latestIdx];
       const latestWind = windSpeeds[latestIdx];
 
-      // Show latest values in summary
+      // Show latest values in two lines
       document.getElementById('latestValues').innerHTML = `
-        🌡 Temp: ${latestTemp ?? '-'} °C |
-        💧 Humidity: ${latestHumidity ?? '-'} % |
-        🌬 Wind: ${latestWind ?? '-'} m/s<br>
-        🇫🇷 French: ${latestFrench ?? '-'} µg/m³ |
-        🇪🇺 EU: ${latestEU ?? '-'} µg/m³ |
-        🇨🇿 Czech: ${latestCzech ?? '-'} µg/m³ |
-        🏙 Yarmag: ${latestYarmag ?? '-'} µg/m³
+        <strong>Weather:</strong> 🌡 Temp: ${latestTemp ?? '-'} °C | 💧 Humidity: ${latestHumidity ?? '-'} % | 🌬 Wind: ${latestWind ?? '-'} m/s<br>
+        <strong>Air Quality:</strong> 🇫🇷 French: ${latestFrench ?? '-'} µg/m³ | 🇪🇺 EU: ${latestEU ?? '-'} µg/m³ | 🇨🇿 Czech: ${latestCzech ?? '-'} µg/m³ | 🏙 Yarmag: ${latestYarmag ?? '-'} µg/m³
       `;
 
       // Alerts
