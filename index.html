@@ -75,7 +75,8 @@
   <header>
     <nav>
       <a href="#pmChart">PM2.5</a>
-      <a href="#weatherChart">Weather</a>
+      <a href="#tempChart">Temperature</a>
+      <a href="#humidityChart">Humidity</a>
       <a href="#windChart">Wind</a>
     </nav>
   </header>
@@ -95,7 +96,8 @@
 
     <div class="grid" id="chartGrid">
       <div class="chart-container"><canvas id="pmChart"></canvas></div>
-      <div class="chart-container"><canvas id="weatherChart"></canvas></div>
+      <div class="chart-container"><canvas id="tempChart"></canvas></div>
+      <div class="chart-container"><canvas id="humidityChart"></canvas></div>
       <div class="chart-container"><canvas id="windChart"></canvas></div>
     </div>
   </div>
@@ -211,50 +213,30 @@
         options: { ...baseOptions, scales: { x: { title: { display: true, text: 'Timestamp' } }, y: { title: { display: true, text: 'PM2.5 (µg/m³)' }, beginAtZero: true } } }
       });
 
-      // --- Weather (dual-axis: Temp left, Humidity right) ---
-      if (Chart.getChart("weatherChart")) Chart.getChart("weatherChart").destroy();
-      new Chart(document.getElementById('weatherChart'), {
+      // --- Temperature ---
+      if (Chart.getChart("tempChart")) Chart.getChart("tempChart").destroy();
+      new Chart(document.getElementById('tempChart'), {
         type: 'line',
         data: {
           labels: timestamps,
           datasets: [
-            { 
-              label: 'Temperature (°C)', 
-              data: temps, 
-              borderColor: 'red', 
-              backgroundColor: 'rgba(255,0,0,0.2)',
-              pointRadius: 2, tension: 0.3, fill: true,
-              yAxisID: 'y'
-            },
-            { 
-              label: 'Humidity (%)', 
-              data: humidities, 
-              borderColor: 'blue', 
-              backgroundColor: 'rgba(0,0,255,0.2)',
-              pointRadius: 2, tension: 0.3, fill: true,
-              yAxisID: 'y1'
-            }
+            { label: 'Temperature (°C)', data: temps, borderColor: 'red', backgroundColor: 'rgba(255,0,0,0.2)', pointRadius: 2, tension: 0.3, fill: true }
           ]
         },
-        options: {
-          ...baseOptions,
-          scales: {
-            x: { title: { display: true, text: 'Timestamp' } },
-            y: { 
-              type: 'linear', 
-              position: 'left',
-              title: { display: true, text: 'Temperature (°C)' },
-              beginAtZero: true
-            },
-            y1: { 
-              type: 'linear', 
-              position: 'right',
-              title: { display: true, text: 'Humidity (%)' },
-              beginAtZero: true,
-              grid: { drawOnChartArea: false }
-            }
-          }
-        }
+        options: { ...baseOptions, scales: { x: { title: { display: true, text: 'Timestamp' } }, y: { title: { display: true, text: 'Temperature (°C)' }, beginAtZero: true } } }
+      });
+
+      // --- Humidity ---
+      if (Chart.getChart("humidityChart")) Chart.getChart("humidityChart").destroy();
+      new Chart(document.getElementById('humidityChart'), {
+        type: 'line',
+        data: {
+          labels: timestamps,
+          datasets: [
+            { label: 'Humidity (%)', data: humidities, borderColor: 'blue', backgroundColor: 'rgba(0,0,255,0.2)', pointRadius: 2, tension: 0.3, fill: true }
+          ]
+        },
+        options: { ...baseOptions, scales: { x: { title: { display: true, text: 'Timestamp' } }, y: { title: { display: true, text: 'Humidity (%)' }, beginAtZero: true } } }
       });
 
       // --- Wind ---
