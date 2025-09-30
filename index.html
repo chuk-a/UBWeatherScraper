@@ -110,7 +110,7 @@
 
   <div class="container">
     <h1>UB Weather & Air Quality</h1>
-    <p>Live data from weather.gov.mn and embassy PM2.5 monitors</p>
+    <p>Live data from weather.gov.mn and PM2.5 monitors at multiple embassies in Ulaanbaatar</p>
     <p><a href="weather_log.csv" download>📥 Download CSV</a></p>
     <p id="lastUpdated">Last updated: loading…</p>
     <div id="latestValues">Loading latest values…</div>
@@ -240,10 +240,10 @@
         </div>
       
         <div class="value-card">
-          <h3>🌍 Air Quality</h3>
-          <p>🇫🇷 French: <span style="color:${getAQIColor(latestFrench)}">●</span> ${latestFrench ?? '-'} µg/m³</p>
-          <p>🇪🇺 EU: <span style="color:${getAQIColor(latestEU)}">●</span> ${latestEU ?? '-'} µg/m³</p>
-          <p>🇨🇿 Czech: <span style="color:${getAQIColor(latestCzech)}">●</span> ${latestCzech ?? '-'} µg/m³</p>
+          <h3>🌍 UB Air Quality</h3>
+          <p>🇫🇷 French Embassy: <span style="color:${getAQIColor(latestFrench)}">●</span> ${latestFrench ?? '-'} µg/m³</p>
+          <p>🇪🇺 EU Delegation: <span style="color:${getAQIColor(latestEU)}">●</span> ${latestEU ?? '-'} µg/m³</p>
+          <p>🇨🇿 Czech Embassy: <span style="color:${getAQIColor(latestCzech)}">●</span> ${latestCzech ?? '-'} µg/m³</p>
           <p>🏙 Yarmag: <span style="color:${getAQIColor(latestYarmag)}">●</span> ${latestYarmag ?? '-'} µg/m³</p>
         </div>
       `;
