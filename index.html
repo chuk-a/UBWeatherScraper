@@ -367,16 +367,23 @@
             {
               label: 'Wind Speed (m/s)',
               data: windSpeeds,
-              borderColor: ctx => getWindInfo(ctx.raw).color,
-              backgroundColor: ctx => getWindInfo(ctx.raw).color + "33",
+              borderColor: 'teal',               // clean single color
+              backgroundColor: 'rgba(0,128,128,0.2)',
               pointRadius: 2,
               tension: 0.3,
               fill: true
             }
           ]
         },
-        options: { ...baseOptions, scales: { ...baseOptions.scales, y: { ...baseOptions.scales.y, title: { display: true, text: 'Wind Speed (m/s)', color: Chart.defaults.color } } } }
+        options: { 
+          ...baseOptions, 
+          scales: { 
+            ...baseOptions.scales, 
+            y: { ...baseOptions.scales.y, title: { display: true, text: 'Wind Speed (m/s)', color: Chart.defaults.color } } 
+          } 
+        }
       });
+      
 
       // Build Wind Legend
       const windCategories = [
