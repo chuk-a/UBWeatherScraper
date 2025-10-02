@@ -97,6 +97,37 @@
       cursor: pointer;
     }
     .btn-group { text-align: center; margin-bottom: 20px; }
+
+    /* Wind legend */
+    .wind-legend {
+      text-align: center;
+      margin-top: 12px;
+      font-size: 0.9em;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px 16px;
+    }
+    .wind-legend span {
+      display: flex;
+      align-items: center;
+      white-space: nowrap;
+    }
+    .wind-legend span::before {
+      content: "";
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      margin-right: 6px;
+      background: gray;
+    }
+    @media (max-width: 768px) {
+      .wind-legend {
+        flex-direction: column;
+        align-items: center;
+      }
+    }
   </style>
 </head>
 <body>
@@ -129,7 +160,10 @@
       <div class="chart-container"><canvas id="windChart"></canvas></div>
     </div>
 
-    <!-- ✅ Wind Speed Benchmarks Card -->
+    <!-- Wind Legend -->
+    <div id="windLegend" class="wind-legend"></div>
+
+    <!-- Wind Speed Benchmarks Card -->
     <div id="windBenchmark" class="value-card" style="max-width:600px; margin: 20px auto;">
       <h3>💨 Wind Speed Benchmarks</h3>
       <p>
@@ -171,23 +205,27 @@
       return "red";
     }
 
+    function getWindInfo(speed) {
+      if (speed == null || isNaN(speed)) return { desc: "", color: "gray" };
+      if (speed < 0.5) return { desc: "Calm", color: "gray" };
+      if (speed <= 1.5) return { desc: "Light Air", color: "#7f8c8d" };
+      if (speed <= 3.3) return { desc: "Light Breeze", color: "green" };
+      if (speed <= 5.4) return { desc: "Gentle Breeze", color: "#27ae60" };
+      if (speed <= 7.9) return { desc: "Moderate Breeze", color: "orange" };
+      if (speed <= 10.7) return { desc: "Fresh Breeze", color: "#e67e22" };
+      if (speed <= 13.8) return { desc: "Strong Breeze", color: "red" };
+      if (speed <= 17.1) return { desc: "Near Gale", color: "purple" };
+      return { desc: "Gale or stronger", color: "black" };
+    }
+
     function updateChartTheme(isDark) {
       const textColor = isDark ? '#eee' : '#333';
       const gridColor = isDark ? '#444' : '#ddd';
 
       Chart.defaults.color = textColor;
-
       Chart.overrides.line.scales = {
-        x: {
-          ticks: { color: textColor },
-          grid: { color: gridColor },
-          title: { color: textColor }
-        },
-        y: {
-          ticks: { color: textColor },
-          grid: { color: gridColor },
-          title: { color: textColor }
-        }
+        x: { ticks: { color: textColor }, grid: { color: gridColor }, title: { color: textColor } },
+        y: { ticks: { color: textColor }, grid: { color: gridColor }, title: { color: textColor } }
       };
 
       loadCSV();
@@ -247,15 +285,15 @@
       const latestTemp = temps[latestIdx];
       const latestHumidity = humidities[latestIdx];
       const latestWind = windSpeeds[latestIdx];
+      const windInfo = getWindInfo(latestWind);
 
       document.getElementById('latestValues').innerHTML = `
         <div class="value-card">
           <h3>🌡 Weather</h3>
           <p class="temp">Temp: ${latestTemp ?? '-'} °C</p>
           <p class="hum">Humidity: ${latestHumidity ?? '-'} %</p>
-          <p class="wind">Wind: ${latestWind ?? '-'} m/s</p>
+          <p class="wind">Wind: ${latestWind ?? '-'} m/s ${latestWind ? `<span style="color:${windInfo.color}">(${windInfo.desc})</span>` : ""}</p>
         </div>
-      
         <div class="value-card">
           <h3>🌍 UB Air Quality</h3>
           <p>🇫🇷 French Embassy: <span style="color:${getAQIColor(latestFrench)}">●</span> ${latestFrench ?? '-'} µg/m³</p>
@@ -302,47 +340,22 @@
         },
         options: { 
           ...baseOptions, 
-          scales: { 
-            ...baseOptions.scales, 
-            y: { ...baseOptions.scales.y, title: { display: true, text: 'PM2.5 (µg/m³)', color: Chart.defaults.color } } 
-          } 
+          scales: { ...baseOptions.scales, y: { ...baseOptions.scales.y, title: { display: true, text: 'PM2.5 (µg/m³)', color: Chart.defaults.color } } }
         }
       });
 
       if (Chart.getChart("tempChart")) Chart.getChart("tempChart").destroy();
       new Chart(document.getElementById('tempChart'), {
         type: 'line',
-        data: {
-          labels: timestamps,
-          datasets: [
-            { label: 'Temperature (°C)', data: temps, borderColor: 'red', backgroundColor: 'rgba(255,0,0,0.2)', pointRadius: 2, tension: 0.3, fill: true }
-          ]
-        },
-        options: { 
-          ...baseOptions, 
-          scales: { 
-            ...baseOptions.scales, 
-            y: { ...baseOptions.scales.y, title: { display: true, text: 'Temperature (°C)', color: Chart.defaults.color } } 
-          } 
-        }
+        data: { labels: timestamps, datasets: [{ label: 'Temperature (°C)', data: temps, borderColor: 'red', backgroundColor: 'rgba(255,0,0,0.2)', pointRadius: 2, tension: 0.3, fill: true }] },
+        options: { ...baseOptions, scales: { ...baseOptions.scales, y: { ...baseOptions.scales.y, title: { display: true, text: 'Temperature (°C)', color: Chart.defaults.color } } } }
       });
 
       if (Chart.getChart("humidityChart")) Chart.getChart("humidityChart").destroy();
       new Chart(document.getElementById('humidityChart'), {
         type: 'line',
-        data: {
-          labels: timestamps,
-          datasets: [
-            { label: 'Humidity (%)', data: humidities, borderColor: 'blue', backgroundColor: 'rgba(0,0,255,0.2)', pointRadius: 2, tension: 0.3, fill: true }
-          ]
-        },
-        options: { 
-          ...baseOptions, 
-          scales: { 
-            ...baseOptions.scales, 
-            y: { ...baseOptions.scales.y, title: { display: true, text: 'Humidity (%)', color: Chart.defaults.color } } 
-          } 
-        }
+        data: { labels: timestamps, datasets: [{ label: 'Humidity (%)', data: humidities, borderColor: 'blue', backgroundColor: 'rgba(0,0,255,0.2)', pointRadius: 2, tension: 0.3, fill: true }] },
+        options: { ...baseOptions, scales: { ...baseOptions.scales, y: { ...baseOptions.scales.y, title: { display: true, text: 'Humidity (%)', color: Chart.defaults.color } } } }
       });
 
       if (Chart.getChart("windChart")) Chart.getChart("windChart").destroy();
@@ -351,17 +364,35 @@
         data: {
           labels: timestamps,
           datasets: [
-            { label: 'Wind Speed (m/s)', data: windSpeeds, borderColor: 'teal', backgroundColor: 'rgba(0,128,128,0.2)', pointRadius: 2, tension: 0.3, fill: true }
+            {
+              label: 'Wind Speed (m/s)',
+              data: windSpeeds,
+              borderColor: ctx => getWindInfo(ctx.raw).color,
+              backgroundColor: ctx => getWindInfo(ctx.raw).color + "33",
+              pointRadius: 2,
+              tension: 0.3,
+              fill: true
+            }
           ]
         },
-        options: { 
-          ...baseOptions, 
-          scales: { 
-            ...baseOptions.scales, 
-            y: { ...baseOptions.scales.y, title: { display: true, text: 'Wind Speed (m/s)', color: Chart.defaults.color } } 
-          } 
-        }
+        options: { ...baseOptions, scales: { ...baseOptions.scales, y: { ...baseOptions.scales.y, title: { display: true, text: 'Wind Speed (m/s)', color: Chart.defaults.color } } } }
       });
+
+      // Build Wind Legend
+      const windCategories = [
+        { desc: "Calm", range: "< 0.5 m/s", color: "gray" },
+        { desc: "Light Air", range: "0.5 - 1.5 m/s", color: "#7f8c8d" },
+        { desc: "Light Breeze", range: "1.6 - 3.3 m/s", color: "green" },
+        { desc: "Gentle Breeze", range: "3.4 - 5.4 m/s", color: "#27ae60" },
+        { desc: "Moderate Breeze", range: "5.5 - 7.9 m/s", color: "orange" },
+        { desc: "Fresh Breeze", range: "8.0 - 10.7 m/s", color: "#e67e22" },
+        { desc: "Strong Breeze", range: "10.8 - 13.8 m/s", color: "red" },
+        { desc: "Near Gale", range: "13.9 - 17.1 m/s", color: "purple" },
+        { desc: "Gale or stronger", range: "≥ 17.2 m/s", color: "black" }
+      ];
+      document.getElementById("windLegend").innerHTML = windCategories.map(cat =>
+        `<span><span style="width:14px;height:14px;background:${cat.color};border-radius:3px;margin-right:6px;display:inline-block;"></span>${cat.desc} (${cat.range})</span>`
+      ).join("");
     }
 
     loadCSV();
