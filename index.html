@@ -84,7 +84,7 @@
     .dark header, .dark footer { background: #1e1e1e; }
     .dark .chart-container { background: #1e1e1e; }
     .dark .value-card { background: #1e1e1e; box-shadow: 0 2px 6px rgba(255,255,255,0.05); }
-    .dark a { color: #4da6ff; } /* NEW: keep links visible in dark mode */
+    .dark a { color: #4da6ff; }
 
     .toggle-btn {
       display: inline-block;
@@ -129,7 +129,7 @@
       <div class="chart-container"><canvas id="windChart"></canvas></div>
     </div>
 
-    <!-- Wind Speed Benchmarks Card -->
+    <!-- ✅ Wind Speed Benchmarks Card -->
     <div id="windBenchmark" class="value-card" style="max-width:600px; margin: 20px auto;">
       <h3>💨 Wind Speed Benchmarks</h3>
       <p>
@@ -154,15 +154,216 @@
   </footer>
 
   <script>
-    /* 🔥 Keep your full original JS here exactly as before */
-    function toggleCompact() { ... }
-    function cleanNumber(val) { ... }
-    function getAQIColor(value) { ... }
-    function updateChartTheme(isDark) { ... }
-    function toggleDarkMode() { ... }
-    async function loadCSV() { ... }
-    function parseCSV(text) { ... }
-    function renderCharts(timestamps, french, eu, czech, yarmag, temps, humidities, windSpeeds) { ... }
+    function toggleCompact() {
+      document.getElementById("chartGrid").classList.toggle("compact");
+    }
+
+    function cleanNumber(val) {
+      if (!val || val === "ERROR") return null;
+      return parseFloat(val.replace(/[^\d.-]/g, '')); 
+    }
+
+    function getAQIColor(value) {
+      if (value == null || isNaN(value)) return "gray";
+      if (value <= 12) return "green";
+      if (value <= 35) return "goldenrod";
+      if (value <= 55) return "orange";
+      return "red";
+    }
+
+    function updateChartTheme(isDark) {
+      const textColor = isDark ? '#eee' : '#333';
+      const gridColor = isDark ? '#444' : '#ddd';
+
+      Chart.defaults.color = textColor;
+
+      Chart.overrides.line.scales = {
+        x: {
+          ticks: { color: textColor },
+          grid: { color: gridColor },
+          title: { color: textColor }
+        },
+        y: {
+          ticks: { color: textColor },
+          grid: { color: gridColor },
+          title: { color: textColor }
+        }
+      };
+
+      loadCSV();
+    }
+
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark');
+      const isDark = document.body.classList.contains('dark');
+      updateChartTheme(isDark);
+    }
+
+    async function loadCSV() {
+      const sources = [
+        'weather_log.csv',
+        'https://raw.githubusercontent.com/chuk-a/chuk-a.github.io/main/weather_log.csv'
+      ];
+      for (const src of sources) {
+        try {
+          const res = await fetch(src);
+          if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
+          const text = await res.text();
+          parseCSV(text);
+          return;
+        } catch (err) {
+          console.warn(`Failed to load from ${src}:`, err);
+        }
+      }
+      document.getElementById('lastUpdated').textContent = '⚠️ Failed to load data';
+    }
+
+    function parseCSV(text) {
+      const result = Papa.parse(text.trim(), { header: true, skipEmptyLines: true });
+      const data = result.data;
+
+      const timestamps = [], temps = [], humidities = [], windSpeeds = [];
+      const french = [], eu = [], czech = [], yarmag = [];
+
+      data.forEach(row => {
+        timestamps.push(row.timestamp);
+        temps.push(cleanNumber(row.temperature));
+        windSpeeds.push(cleanNumber(row.wind_speed));
+        humidities.push(cleanNumber(row.humidity));
+        french.push(cleanNumber(row.pm25_french));
+        eu.push(cleanNumber(row.pm25_eu));
+        czech.push(cleanNumber(row.pm25_czech));
+        yarmag.push(cleanNumber(row.pm25_yarmag));
+      });
+
+      const latestIdx = timestamps.length - 1;
+      const latest = timestamps[latestIdx];
+      document.getElementById('lastUpdated').textContent = `Last updated: ${latest} (Ulaanbaatar time)`;
+
+      const latestFrench = french[latestIdx];
+      const latestEU = eu[latestIdx];
+      const latestCzech = czech[latestIdx];
+      const latestYarmag = yarmag[latestIdx];
+      const latestTemp = temps[latestIdx];
+      const latestHumidity = humidities[latestIdx];
+      const latestWind = windSpeeds[latestIdx];
+
+      document.getElementById('latestValues').innerHTML = `
+        <div class="value-card">
+          <h3>🌡 Weather</h3>
+          <p class="temp">Temp: ${latestTemp ?? '-'} °C</p>
+          <p class="hum">Humidity: ${latestHumidity ?? '-'} %</p>
+          <p class="wind">Wind: ${latestWind ?? '-'} m/s</p>
+        </div>
+      
+        <div class="value-card">
+          <h3>🌍 UB Air Quality</h3>
+          <p>🇫🇷 French Embassy: <span style="color:${getAQIColor(latestFrench)}">●</span> ${latestFrench ?? '-'} µg/m³</p>
+          <p>🇪🇺 EU Delegation: <span style="color:${getAQIColor(latestEU)}">●</span> ${latestEU ?? '-'} µg/m³</p>
+          <p>🇨🇿 Czech Embassy: <span style="color:${getAQIColor(latestCzech)}">●</span> ${latestCzech ?? '-'} µg/m³</p>
+          <p>🏙 Yarmag: <span style="color:${getAQIColor(latestYarmag)}">●</span> ${latestYarmag ?? '-'} µg/m³</p>
+        </div>
+      `;
+
+      let alertMsg = '';
+      if ([latestFrench, latestCzech, latestYarmag, latestEU].some(v => v > 55)) {
+        alertMsg = '🚨 Unhealthy air quality. Limit outdoor activity.';
+      } else if ([latestFrench, latestCzech, latestYarmag, latestEU].some(v => v > 35)) {
+        alertMsg = '⚠️ Air quality may affect sensitive groups.';
+      }
+      document.getElementById('pmAlert').textContent = alertMsg;
+
+      renderCharts(timestamps, french, eu, czech, yarmag, temps, humidities, windSpeeds);
+    }
+
+    function renderCharts(timestamps, french, eu, czech, yarmag, temps, humidities, windSpeeds) {
+      const baseOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { tooltip: { mode: 'index', intersect: false }, legend: { position: 'top', labels: { color: Chart.defaults.color } } },
+        interaction: { mode: 'nearest', axis: 'x' },
+        scales: {
+          x: { ticks: { color: Chart.defaults.color }, grid: { color: '#ddd' }, title: { display: true, text: 'Timestamp', color: Chart.defaults.color } },
+          y: { ticks: { color: Chart.defaults.color }, grid: { color: '#ddd' }, title: { display: true, text: '', color: Chart.defaults.color } }
+        }
+      };
+
+      if (Chart.getChart("pmChart")) Chart.getChart("pmChart").destroy();
+      new Chart(document.getElementById('pmChart'), {
+        type: 'line',
+        data: {
+          labels: timestamps,
+          datasets: [
+            { label: 'French Embassy PM2.5', data: french, borderColor: 'rgba(255,99,132,1)', backgroundColor: 'rgba(255,99,132,0.2)', pointRadius: 2, tension: 0.3, fill: true },
+            { label: 'EU PM2.5', data: eu, borderColor: 'purple', backgroundColor: 'rgba(128,0,128,0.2)', pointRadius: 2, tension: 0.3, fill: true },
+            { label: 'Czech Embassy PM2.5', data: czech, borderColor: 'rgba(54,162,235,1)', backgroundColor: 'rgba(54,162,235,0.2)', pointRadius: 2, tension: 0.3, fill: true },
+            { label: 'Yarmag Garden City PM2.5', data: yarmag, borderColor: 'rgba(75,192,192,1)', backgroundColor: 'rgba(75,192,192,0.2)', pointRadius: 2, tension: 0.3, fill: true }
+          ]
+        },
+        options: { 
+          ...baseOptions, 
+          scales: { 
+            ...baseOptions.scales, 
+            y: { ...baseOptions.scales.y, title: { display: true, text: 'PM2.5 (µg/m³)', color: Chart.defaults.color } } 
+          } 
+        }
+      });
+
+      if (Chart.getChart("tempChart")) Chart.getChart("tempChart").destroy();
+      new Chart(document.getElementById('tempChart'), {
+        type: 'line',
+        data: {
+          labels: timestamps,
+          datasets: [
+            { label: 'Temperature (°C)', data: temps, borderColor: 'red', backgroundColor: 'rgba(255,0,0,0.2)', pointRadius: 2, tension: 0.3, fill: true }
+          ]
+        },
+        options: { 
+          ...baseOptions, 
+          scales: { 
+            ...baseOptions.scales, 
+            y: { ...baseOptions.scales.y, title: { display: true, text: 'Temperature (°C)', color: Chart.defaults.color } } 
+          } 
+        }
+      });
+
+      if (Chart.getChart("humidityChart")) Chart.getChart("humidityChart").destroy();
+      new Chart(document.getElementById('humidityChart'), {
+        type: 'line',
+        data: {
+          labels: timestamps,
+          datasets: [
+            { label: 'Humidity (%)', data: humidities, borderColor: 'blue', backgroundColor: 'rgba(0,0,255,0.2)', pointRadius: 2, tension: 0.3, fill: true }
+          ]
+        },
+        options: { 
+          ...baseOptions, 
+          scales: { 
+            ...baseOptions.scales, 
+            y: { ...baseOptions.scales.y, title: { display: true, text: 'Humidity (%)', color: Chart.defaults.color } } 
+          } 
+        }
+      });
+
+      if (Chart.getChart("windChart")) Chart.getChart("windChart").destroy();
+      new Chart(document.getElementById('windChart'), {
+        type: 'line',
+        data: {
+          labels: timestamps,
+          datasets: [
+            { label: 'Wind Speed (m/s)', data: windSpeeds, borderColor: 'teal', backgroundColor: 'rgba(0,128,128,0.2)', pointRadius: 2, tension: 0.3, fill: true }
+          ]
+        },
+        options: { 
+          ...baseOptions, 
+          scales: { 
+            ...baseOptions.scales, 
+            y: { ...baseOptions.scales.y, title: { display: true, text: 'Wind Speed (m/s)', color: Chart.defaults.color } } 
+          } 
+        }
+      });
+    }
+
     loadCSV();
     setInterval(loadCSV, 1800000);
   </script>
