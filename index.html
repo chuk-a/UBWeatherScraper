@@ -171,15 +171,15 @@
 
     function getWindInfo(speed) {
       if (speed == null || isNaN(speed)) return { desc: "", color: "gray" };
-      if (speed < 0.5) return { desc: "Calm", color: "gray" };
-      if (speed <= 1.5) return { desc: "Light Air", color: "#7f8c8d" };
-      if (speed <= 3.3) return { desc: "Light Breeze", color: "green" };
-      if (speed <= 5.4) return { desc: "Gentle Breeze", color: "#27ae60" };
-      if (speed <= 7.9) return { desc: "Moderate Breeze", color: "orange" };
-      if (speed <= 10.7) return { desc: "Fresh Breeze", color: "#e67e22" };
-      if (speed <= 13.8) return { desc: "Strong Breeze", color: "red" };
-      if (speed <= 17.1) return { desc: "Near Gale", color: "purple" };
-      return { desc: "Gale or stronger", color: "black" };
+      if (speed < 0.5) return { desc: "Calm", min: 0, max: 0.5, color: "gray" };
+      if (speed <= 1.5) return { desc: "Light Air", min: 0.5, max: 1.5, color: "#7f8c8d" };
+      if (speed <= 3.3) return { desc: "Light Breeze", min: 1.6, max: 3.3, color: "green" };
+      if (speed <= 5.4) return { desc: "Gentle Breeze", min: 3.4, max: 5.4, color: "#27ae60" };
+      if (speed <= 7.9) return { desc: "Moderate Breeze", min: 5.5, max: 7.9, color: "orange" };
+      if (speed <= 10.7) return { desc: "Fresh Breeze", min: 8.0, max: 10.7, color: "#e67e22" };
+      if (speed <= 13.8) return { desc: "Strong Breeze", min: 10.8, max: 13.8, color: "red" };
+      if (speed <= 17.1) return { desc: "Near Gale", min: 13.9, max: 17.1, color: "purple" };
+      return { desc: "Gale or stronger", min: 17.2, max: 25, color: "black" };
     }
 
     function updateChartTheme(isDark) {
@@ -273,10 +273,10 @@
       }
       document.getElementById('pmAlert').textContent = alertMsg;
 
-      renderCharts(timestamps, french, eu, czech, yarmag, temps, humidities, windSpeeds);
+      renderCharts(timestamps, french, eu, czech, yarmag, temps, humidities, windSpeeds, windInfo);
     }
 
-    function renderCharts(timestamps, french, eu, czech, yarmag, temps, humidities, windSpeeds) {
+    function renderCharts(timestamps, french, eu, czech, yarmag, temps, humidities, windSpeeds, windInfo) {
       const baseOptions = {
         responsive: true,
         maintainAspectRatio: false,
@@ -317,30 +317,19 @@
         options: { ...baseOptions, scales: { ...baseOptions.scales, y: { ...baseOptions.scales.y, title: { display: true, text: 'Humidity (%)', color: Chart.defaults.color } } } }
       });
 
-      // Wind with benchmark lines
+      // Wind with dynamic benchmarks
       if (Chart.getChart("windChart")) Chart.getChart("windChart").destroy();
+      let windAnnotations = {};
+      if (windInfo && windInfo.min !== undefined && windInfo.max !== undefined) {
+        windAnnotations = {
+          lower: { type: 'line', yMin: windInfo.min, yMax: windInfo.min, borderColor: windInfo.color, borderWidth: 2, borderDash: [6, 6], label: { enabled: true, content: `Min ${windInfo.desc}`, position: "end" } },
+          upper: { type: 'line', yMin: windInfo.max, yMax: windInfo.max, borderColor: windInfo.color, borderWidth: 2, borderDash: [6, 6], label: { enabled: true, content: `Max ${windInfo.desc}`, position: "end" } }
+        };
+      }
       new Chart(document.getElementById('windChart'), {
         type: 'line',
         data: { labels: timestamps, datasets: [{ label: 'Wind Speed (m/s)', data: windSpeeds, borderColor: 'teal', backgroundColor: 'rgba(0,128,128,0.2)', pointRadius: 2, tension: 0.3, fill: true }] },
-        options: { 
-          ...baseOptions, 
-          plugins: {
-            ...baseOptions.plugins,
-            annotation: {
-              annotations: {
-                calm: { type: 'line', yMin: 0.5, yMax: 0.5, borderColor: 'gray', borderWidth: 1, borderDash: [4,4], label: { enabled: true, content: 'Calm', position: "end" } },
-                lightAir: { type: 'line', yMin: 1.5, yMax: 1.5, borderColor: '#7f8c8d', borderWidth: 1, borderDash: [4,4], label: { enabled: true, content: 'Light Air', position: "end" } },
-                lightBreeze: { type: 'line', yMin: 3.3, yMax: 3.3, borderColor: 'green', borderWidth: 1, borderDash: [4,4], label: { enabled: true, content: 'Light Breeze', position: "end" } },
-                gentleBreeze: { type: 'line', yMin: 5.4, yMax: 5.4, borderColor: '#27ae60', borderWidth: 1, borderDash: [4,4], label: { enabled: true, content: 'Gentle Breeze', position: "end" } },
-                moderateBreeze: { type: 'line', yMin: 7.9, yMax: 7.9, borderColor: 'orange', borderWidth: 1, borderDash: [4,4], label: { enabled: true, content: 'Moderate Breeze', position: "end" } },
-                freshBreeze: { type: 'line', yMin: 10.7, yMax: 10.7, borderColor: '#e67e22', borderWidth: 1, borderDash: [4,4], label: { enabled: true, content: 'Fresh Breeze', position: "end" } },
-                strongBreeze: { type: 'line', yMin: 13.8, yMax: 13.8, borderColor: 'red', borderWidth: 1, borderDash: [4,4], label: { enabled: true, content: 'Strong Breeze', position: "end" } },
-                nearGale: { type: 'line', yMin: 17.1, yMax: 17.1, borderColor: 'purple', borderWidth: 1, borderDash: [4,4], label: { enabled: true, content: 'Near Gale', position: "end" } }
-              }
-            }
-          },
-          scales: { ...baseOptions.scales, y: { ...baseOptions.scales.y, title: { display: true, text: 'Wind Speed (m/s)', color: Chart.defaults.color } } }
-        }
+        options: { ...baseOptions, plugins: { ...baseOptions.plugins, annotation: { annotations: windAnnotations } }, scales: { ...baseOptions.scales, y: { ...baseOptions.scales.y, title: { display: true, text: 'Wind Speed (m/s)', color: Chart.defaults.color } } } }
       });
     }
 
