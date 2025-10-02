@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.2.1"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <style>
     body { font-family: 'Inter', sans-serif; background: #f9f9f9; color: #333; margin: 0; padding: 0; }
@@ -97,37 +98,6 @@
       cursor: pointer;
     }
     .btn-group { text-align: center; margin-bottom: 20px; }
-
-    /* Wind legend */
-    .wind-legend {
-      text-align: center;
-      margin-top: 12px;
-      font-size: 0.9em;
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 8px 16px;
-    }
-    .wind-legend span {
-      display: flex;
-      align-items: center;
-      white-space: nowrap;
-    }
-    .wind-legend span::before {
-      content: "";
-      display: inline-block;
-      width: 14px;
-      height: 14px;
-      border-radius: 3px;
-      margin-right: 6px;
-      background: gray;
-    }
-    @media (max-width: 768px) {
-      .wind-legend {
-        flex-direction: column;
-        align-items: center;
-      }
-    }
   </style>
 </head>
 <body>
@@ -159,7 +129,7 @@
       <div class="chart-container"><canvas id="humidityChart"></canvas></div>
       <div class="chart-container"><canvas id="windChart"></canvas></div>
     </div>
-   
+
     <!-- Wind Speed Benchmarks Card -->
     <div id="windBenchmark" class="value-card" style="max-width:600px; margin: 20px auto;">
       <h3>💨 Wind Speed Benchmarks</h3>
@@ -172,9 +142,6 @@
         <b>Fresh Breeze:</b> 8.0 - 10.7 m/s<br>
         <b>Strong Breeze:</b> 10.8 - 13.8 m/s<br>
         <b>Near Gale:</b> 13.9 - 17.1 m/s<br>
-      </p>
-      <p style="font-size:0.9em;">
-        Source: <a href="http://gyre.umeoce.maine.edu/data/gomoos/buoy/php/variable_description.php?variable=wind_2_speed" target="_blank">GOMOOS Buoy Variable Descriptions</a>
       </p>
     </div>
   </div>
@@ -218,13 +185,11 @@
     function updateChartTheme(isDark) {
       const textColor = isDark ? '#eee' : '#333';
       const gridColor = isDark ? '#444' : '#ddd';
-
       Chart.defaults.color = textColor;
       Chart.overrides.line.scales = {
         x: { ticks: { color: textColor }, grid: { color: gridColor }, title: { color: textColor } },
         y: { ticks: { color: textColor }, grid: { color: gridColor }, title: { color: textColor } }
       };
-
       loadCSV();
     }
 
@@ -323,24 +288,20 @@
         }
       };
 
+      // PM2.5
       if (Chart.getChart("pmChart")) Chart.getChart("pmChart").destroy();
       new Chart(document.getElementById('pmChart'), {
         type: 'line',
-        data: {
-          labels: timestamps,
-          datasets: [
-            { label: 'French Embassy PM2.5', data: french, borderColor: 'rgba(255,99,132,1)', backgroundColor: 'rgba(255,99,132,0.2)', pointRadius: 2, tension: 0.3, fill: true },
-            { label: 'EU PM2.5', data: eu, borderColor: 'purple', backgroundColor: 'rgba(128,0,128,0.2)', pointRadius: 2, tension: 0.3, fill: true },
-            { label: 'Czech Embassy PM2.5', data: czech, borderColor: 'rgba(54,162,235,1)', backgroundColor: 'rgba(54,162,235,0.2)', pointRadius: 2, tension: 0.3, fill: true },
-            { label: 'Yarmag Garden City PM2.5', data: yarmag, borderColor: 'rgba(75,192,192,1)', backgroundColor: 'rgba(75,192,192,0.2)', pointRadius: 2, tension: 0.3, fill: true }
-          ]
-        },
-        options: { 
-          ...baseOptions, 
-          scales: { ...baseOptions.scales, y: { ...baseOptions.scales.y, title: { display: true, text: 'PM2.5 (µg/m³)', color: Chart.defaults.color } } }
-        }
+        data: { labels: timestamps, datasets: [
+          { label: 'French Embassy PM2.5', data: french, borderColor: 'rgba(255,99,132,1)', backgroundColor: 'rgba(255,99,132,0.2)', pointRadius: 2, tension: 0.3, fill: true },
+          { label: 'EU PM2.5', data: eu, borderColor: 'purple', backgroundColor: 'rgba(128,0,128,0.2)', pointRadius: 2, tension: 0.3, fill: true },
+          { label: 'Czech Embassy PM2.5', data: czech, borderColor: 'rgba(54,162,235,1)', backgroundColor: 'rgba(54,162,235,0.2)', pointRadius: 2, tension: 0.3, fill: true },
+          { label: 'Yarmag Garden City PM2.5', data: yarmag, borderColor: 'rgba(75,192,192,1)', backgroundColor: 'rgba(75,192,192,0.2)', pointRadius: 2, tension: 0.3, fill: true }
+        ] },
+        options: { ...baseOptions, scales: { ...baseOptions.scales, y: { ...baseOptions.scales.y, title: { display: true, text: 'PM2.5 (µg/m³)', color: Chart.defaults.color } } } }
       });
 
+      // Temperature
       if (Chart.getChart("tempChart")) Chart.getChart("tempChart").destroy();
       new Chart(document.getElementById('tempChart'), {
         type: 'line',
@@ -348,6 +309,7 @@
         options: { ...baseOptions, scales: { ...baseOptions.scales, y: { ...baseOptions.scales.y, title: { display: true, text: 'Temperature (°C)', color: Chart.defaults.color } } } }
       });
 
+      // Humidity
       if (Chart.getChart("humidityChart")) Chart.getChart("humidityChart").destroy();
       new Chart(document.getElementById('humidityChart'), {
         type: 'line',
@@ -355,32 +317,32 @@
         options: { ...baseOptions, scales: { ...baseOptions.scales, y: { ...baseOptions.scales.y, title: { display: true, text: 'Humidity (%)', color: Chart.defaults.color } } } }
       });
 
+      // Wind with benchmark lines
       if (Chart.getChart("windChart")) Chart.getChart("windChart").destroy();
       new Chart(document.getElementById('windChart'), {
         type: 'line',
-        data: {
-          labels: timestamps,
-          datasets: [
-            {
-              label: 'Wind Speed (m/s)',
-              data: windSpeeds,
-              borderColor: 'teal',               // clean single color
-              backgroundColor: 'rgba(0,128,128,0.2)',
-              pointRadius: 2,
-              tension: 0.3,
-              fill: true
-            }
-          ]
-        },
+        data: { labels: timestamps, datasets: [{ label: 'Wind Speed (m/s)', data: windSpeeds, borderColor: 'teal', backgroundColor: 'rgba(0,128,128,0.2)', pointRadius: 2, tension: 0.3, fill: true }] },
         options: { 
           ...baseOptions, 
-          scales: { 
-            ...baseOptions.scales, 
-            y: { ...baseOptions.scales.y, title: { display: true, text: 'Wind Speed (m/s)', color: Chart.defaults.color } } 
-          } 
+          plugins: {
+            ...baseOptions.plugins,
+            annotation: {
+              annotations: {
+                calm: { type: 'line', yMin: 0.5, yMax: 0.5, borderColor: 'gray', borderWidth: 1, borderDash: [4,4], label: { enabled: true, content: 'Calm', position: "end" } },
+                lightAir: { type: 'line', yMin: 1.5, yMax: 1.5, borderColor: '#7f8c8d', borderWidth: 1, borderDash: [4,4], label: { enabled: true, content: 'Light Air', position: "end" } },
+                lightBreeze: { type: 'line', yMin: 3.3, yMax: 3.3, borderColor: 'green', borderWidth: 1, borderDash: [4,4], label: { enabled: true, content: 'Light Breeze', position: "end" } },
+                gentleBreeze: { type: 'line', yMin: 5.4, yMax: 5.4, borderColor: '#27ae60', borderWidth: 1, borderDash: [4,4], label: { enabled: true, content: 'Gentle Breeze', position: "end" } },
+                moderateBreeze: { type: 'line', yMin: 7.9, yMax: 7.9, borderColor: 'orange', borderWidth: 1, borderDash: [4,4], label: { enabled: true, content: 'Moderate Breeze', position: "end" } },
+                freshBreeze: { type: 'line', yMin: 10.7, yMax: 10.7, borderColor: '#e67e22', borderWidth: 1, borderDash: [4,4], label: { enabled: true, content: 'Fresh Breeze', position: "end" } },
+                strongBreeze: { type: 'line', yMin: 13.8, yMax: 13.8, borderColor: 'red', borderWidth: 1, borderDash: [4,4], label: { enabled: true, content: 'Strong Breeze', position: "end" } },
+                nearGale: { type: 'line', yMin: 17.1, yMax: 17.1, borderColor: 'purple', borderWidth: 1, borderDash: [4,4], label: { enabled: true, content: 'Near Gale', position: "end" } }
+              }
+            }
+          },
+          scales: { ...baseOptions.scales, y: { ...baseOptions.scales.y, title: { display: true, text: 'Wind Speed (m/s)', color: Chart.defaults.color } } }
         }
       });
-      
+    }
 
     loadCSV();
     setInterval(loadCSV, 1800000);
