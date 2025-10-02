@@ -319,19 +319,44 @@
 
       // Wind with dynamic benchmarks
       if (Chart.getChart("windChart")) Chart.getChart("windChart").destroy();
-      let windAnnotations = {};
+     let windAnnotations = {};
       if (windInfo && windInfo.min !== undefined && windInfo.max !== undefined) {
         windAnnotations = {
-          lower: { type: 'line', yMin: windInfo.min, yMax: windInfo.min, borderColor: windInfo.color, borderWidth: 2, borderDash: [6, 6], label: { enabled: true, content: `Min ${windInfo.desc}`, position: "end" } },
-          upper: { type: 'line', yMin: windInfo.max, yMax: windInfo.max, borderColor: windInfo.color, borderWidth: 2, borderDash: [6, 6], label: { enabled: true, content: `Max ${windInfo.desc}`, position: "end" } }
+          lower: {
+            type: 'line',
+            yMin: windInfo.min,
+            yMax: windInfo.min,
+            borderColor: windInfo.color,
+            borderWidth: 2,
+            borderDash: [6, 6],
+            label: {
+              display: true,
+              content: `Min ${windInfo.desc}`,
+              position: "end",
+              backgroundColor: 'rgba(0,0,0,0.7)',
+              color: '#fff',
+              font: { size: 10 }
+            }
+          },
+          upper: {
+            type: 'line',
+            yMin: windInfo.max,
+            yMax: windInfo.max,
+            borderColor: windInfo.color,
+            borderWidth: 2,
+            borderDash: [6, 6],
+            label: {
+              display: true,
+              content: `Max ${windInfo.desc}`,
+              position: "end",
+              backgroundColor: 'rgba(0,0,0,0.7)',
+              color: '#fff',
+              font: { size: 10 }
+            }
+          }
         };
       }
-      new Chart(document.getElementById('windChart'), {
-        type: 'line',
-        data: { labels: timestamps, datasets: [{ label: 'Wind Speed (m/s)', data: windSpeeds, borderColor: 'teal', backgroundColor: 'rgba(0,128,128,0.2)', pointRadius: 2, tension: 0.3, fill: true }] },
-        options: { ...baseOptions, plugins: { ...baseOptions.plugins, annotation: { annotations: windAnnotations } }, scales: { ...baseOptions.scales, y: { ...baseOptions.scales.y, title: { display: true, text: 'Wind Speed (m/s)', color: Chart.defaults.color } } } }
-      });
-    }
+
 
     loadCSV();
     setInterval(loadCSV, 1800000);
