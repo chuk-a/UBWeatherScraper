@@ -142,6 +142,7 @@
         <b>Fresh Breeze:</b> 8.0 - 10.7 m/s<br>
         <b>Strong Breeze:</b> 10.8 - 13.8 m/s<br>
         <b>Near Gale:</b> 13.9 - 17.1 m/s<br>
+        <b>Gale or stronger:</b> ≥ 17.2 m/s
       </p>
     </div>
   </div>
@@ -319,7 +320,7 @@
 
       // Wind with dynamic benchmarks
       if (Chart.getChart("windChart")) Chart.getChart("windChart").destroy();
-     let windAnnotations = {};
+      let windAnnotations = {};
       if (windInfo && windInfo.min !== undefined && windInfo.max !== undefined) {
         windAnnotations = {
           lower: {
@@ -356,7 +357,16 @@
           }
         };
       }
-
+      new Chart(document.getElementById('windChart'), {
+        type: 'line',
+        data: { labels: timestamps, datasets: [{ label: 'Wind Speed (m/s)', data: windSpeeds, borderColor: 'teal', backgroundColor: 'rgba(0,128,128,0.2)', pointRadius: 2, tension: 0.3, fill: true }] },
+        options: { 
+          ...baseOptions, 
+          plugins: { ...baseOptions.plugins, annotation: { annotations: windAnnotations } }, 
+          scales: { ...baseOptions.scales, y: { ...baseOptions.scales.y, title: { display: true, text: 'Wind Speed (m/s)', color: Chart.defaults.color } } } 
+        }
+      });
+    }
 
     loadCSV();
     setInterval(loadCSV, 1800000);
