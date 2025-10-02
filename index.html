@@ -159,10 +159,7 @@
       <div class="chart-container"><canvas id="humidityChart"></canvas></div>
       <div class="chart-container"><canvas id="windChart"></canvas></div>
     </div>
-
-    <!-- Wind Legend -->
-    <div id="windLegend" class="wind-legend"></div>
-
+   
     <!-- Wind Speed Benchmarks Card -->
     <div id="windBenchmark" class="value-card" style="max-width:600px; margin: 20px auto;">
       <h3>💨 Wind Speed Benchmarks</h3>
@@ -384,23 +381,6 @@
         }
       });
       
-
-      // Build Wind Legend
-      const windCategories = [
-        { desc: "Calm", range: "< 0.5 m/s", color: "gray" },
-        { desc: "Light Air", range: "0.5 - 1.5 m/s", color: "#7f8c8d" },
-        { desc: "Light Breeze", range: "1.6 - 3.3 m/s", color: "green" },
-        { desc: "Gentle Breeze", range: "3.4 - 5.4 m/s", color: "#27ae60" },
-        { desc: "Moderate Breeze", range: "5.5 - 7.9 m/s", color: "orange" },
-        { desc: "Fresh Breeze", range: "8.0 - 10.7 m/s", color: "#e67e22" },
-        { desc: "Strong Breeze", range: "10.8 - 13.8 m/s", color: "red" },
-        { desc: "Near Gale", range: "13.9 - 17.1 m/s", color: "purple" },
-        { desc: "Gale or stronger", range: "≥ 17.2 m/s", color: "black" }
-      ];
-      document.getElementById("windLegend").innerHTML = windCategories.map(cat =>
-        `<span><span style="width:14px;height:14px;background:${cat.color};border-radius:3px;margin-right:6px;display:inline-block;"></span>${cat.desc} (${cat.range})</span>`
-      ).join("");
-    }
 
     loadCSV();
     setInterval(loadCSV, 1800000);
